@@ -156,7 +156,7 @@ html,body{background:var(--g50);font-family:'Pretendard',-apple-system,sans-seri
   <div class="tab on" onclick="sw('log',this)">기록</div>
   <div class="tab" onclick="sw('stats',this)">통계</div>
   <div class="tab" onclick="sw('streak',this)">스트릭</div>
-  <div class="tab" onclick="sw('words',this)">문장</div>
+  <div class="tab" onclick="sw('words',this)">노트</div>
 </div>
 
 <div class="main">
@@ -202,29 +202,20 @@ html,body{background:var(--g50);font-family:'Pretendard',-apple-system,sans-seri
 
 <div class="sec" id="sec-streak">
   <div class="card">
-    <div class="cal-hd">
-      <div style="font-size:12px;font-weight:500;color:var(--g400)">전월 · 당월</div>
-      <div class="streak-nums">
-        <div class="sn"><div class="v" id="curS">0</div><div class="l">연속</div></div>
-        <div class="sn" style="margin-left:16px"><div class="v" id="totD">0</div><div class="l">총 학습일</div></div>
-      </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <button onclick="changeStreakMonth(-1)" style="background:none;border:none;cursor:pointer;padding:4px 8px;font-size:20px;color:var(--g400);line-height:1">‹</button>
+      <div id="streakMonthLabel" style="font-size:13px;font-weight:600;color:var(--g900)"></div>
+      <button onclick="changeStreakMonth(1)" id="streakNext" style="background:none;border:none;cursor:pointer;padding:4px 8px;font-size:20px;color:var(--g400);line-height:1">›</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:16px;margin-bottom:14px">
+      <div class="sn"><div class="v" id="curS">0</div><div class="l">연속</div></div>
+      <div class="sn"><div class="v" id="totD">0</div><div class="l">총 학습일</div></div>
     </div>
     <div id="ringCal"></div>
   </div>
   <div class="card" style="background:var(--primary-light);border-color:var(--g200)">
-    <div style="font-size:11px;font-weight:500;color:var(--primary-dark);margin-bottom:8px">범례</div>
-    <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--g700);align-items:center">
-      <span style="display:flex;align-items:center;gap:6px">
-        <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="6" fill="none" stroke="var(--g200)" stroke-width="2.5"/><circle cx="9" cy="9" r="6" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-dasharray="18 20" stroke-linecap="round" transform="rotate(-90 9 9)"/></svg>언어
-      </span>
-      <span style="display:flex;align-items:center;gap:6px">
-        <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="6" fill="none" stroke="var(--g200)" stroke-width="2.5"/><circle cx="9" cy="9" r="6" fill="none" stroke="#ba7517" stroke-width="2.5" stroke-dasharray="18 20" stroke-linecap="round" transform="rotate(-90 9 9)"/></svg>독서
-      </span>
-      <span style="display:flex;align-items:center;gap:6px">
-        <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="6" fill="none" stroke="var(--g200)" stroke-width="2.5"/><circle cx="9" cy="9" r="6" fill="none" stroke="var(--t400)" stroke-width="2.5" stroke-dasharray="18 20" stroke-linecap="round" transform="rotate(-90 9 9)"/></svg>둘 다
-      </span>
-      <span style="color:var(--g400)">링 크기 = 학습량</span>
-    </div>
+    <div style="font-size:11px;font-weight:500;color:var(--primary-dark);margin-bottom:10px">범례</div>
+    <div id="streakLegend" style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--g700);align-items:center"></div>
   </div>
 </div>
 
@@ -841,10 +832,29 @@ function renderStats(){
     </div>`).join('');
 }
 
-// 스트릭
+// 스트릭 월 네비게이터
+let streakYear = new Date().getFullYear();
+let streakMonth = new Date().getMonth();
+
+function changeStreakMonth(dir){
+  streakMonth += dir;
+  if(streakMonth>11){streakMonth=0;streakYear++;}
+  if(streakMonth<0){streakMonth=11;streakYear--;}
+  renderStreak();
+}
+
 function renderStreak(){
   const now=new Date();
   const td=today();
+  const CAT_COLORS=['#534ab7','#ba7517','#1d9e75','#993c1d','#185fa5','#6b7040','#9a7a5f','#d94f4f'];
+  const pc=getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+
+  // 월 라벨 + 미래 비활성화
+  document.getElementById('streakMonthLabel').textContent=`${streakYear}년 ${streakMonth+1}월`;
+  const nextBtn=document.getElementById('streakNext');
+  const isCurrent=streakYear>now.getFullYear()||(streakYear===now.getFullYear()&&streakMonth>=now.getMonth());
+  nextBtn.style.color=isCurrent?'var(--g200)':'var(--g400)';
+  nextBtn.disabled=isCurrent;
 
   // 학습 데이터 맵
   const logMap={};
@@ -853,12 +863,8 @@ function renderStreak(){
     logMap[l.date].min+=l.min;
     logMap[l.date].cats.add(l.cat);
   });
-
-  // 최대 학습 분 (링 비율 계산용)
   const allMins=Object.values(logMap).map(v=>v.min);
   const maxMin=Math.max(...allMins,60);
-  const CAT_COLORS=['#534ab7','#ba7517','#1d9e75','#993c1d','#185fa5','#6b7040','#9a7a5f','#d94f4f'];
-  const pc=getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
 
   function makeRingHTML(dateStr){
     const d=new Date(dateStr+'T00:00:00');
@@ -866,64 +872,52 @@ function renderStreak(){
     const m=logMap[dateStr];
     const isToday=dateStr===td;
     const isFuture=dateStr>td;
-    const r=12, circ=2*Math.PI*r;
-    let ringColor=pc, ratio=0, numText='';
+    const r=12,circ=2*Math.PI*r;
+    let ringColor=pc,ratio=0,numText='';
     if(m&&!isFuture){
       ratio=Math.min(m.min/maxMin,1);
       if(ratio<0.08)ratio=0.08;
       numText=m.min>=60?`${Math.round(m.min/60)}h`:m.min+'';
       const catsArr=[...m.cats];
-      if(catsArr.length>1){ ringColor='#1d9e75'; }
-      else {
-        const idx=categories.findIndex(c=>c.id===catsArr[0]);
-        ringColor=idx>=0?CAT_COLORS[idx%CAT_COLORS.length]:pc;
-      }
+      if(catsArr.length>1){ringColor='#1d9e75';}
+      else{const idx=categories.findIndex(c=>c.id===catsArr[0]);ringColor=idx>=0?CAT_COLORS[idx%CAT_COLORS.length]:pc;}
     }
-
-    const dash=ratio*circ;
-    const gap=circ-dash;
+    const dash=ratio*circ,gap=circ-dash;
     const trackColor=isFuture?'#ebebeb':'var(--g100)';
-    const numColor=m?ringColor:'var(--g200)';
-
-    return `
-      <div class="ring-cell">
-        <div class="ring-wrap${isToday?' today-ring':''}" style="width:32px;height:32px">
-          <svg width="32" height="32" viewBox="0 0 32 32">
-            <circle class="track" cx="16" cy="16" r="${r}" fill="none" stroke="${trackColor}" stroke-width="3"/>
-            ${m&&!isFuture?`<circle cx="16" cy="16" r="${r}" fill="none" stroke="${ringColor}" stroke-width="3"
-              stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}"
-              stroke-linecap="round" transform="rotate(-90 16 16)"/>`:''}
-          </svg>
-          <div class="ring-num" style="color:${numColor}">${numText||dayNum}</div>
-        </div>
-      </div>`;
+    return `<div class="ring-cell"><div class="ring-wrap${isToday?' today-ring':''}" style="width:32px;height:32px">
+      <svg width="32" height="32" viewBox="0 0 32 32">
+        <circle cx="16" cy="16" r="${r}" fill="none" stroke="${trackColor}" stroke-width="3"/>
+        ${m&&!isFuture?`<circle cx="16" cy="16" r="${r}" fill="none" stroke="${ringColor}" stroke-width="3" stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}" stroke-linecap="round" transform="rotate(-90 16 16)"/>`:''}
+      </svg>
+      <div class="ring-num" style="color:${m?ringColor:'var(--g200)'}">${numText||dayNum}</div>
+    </div></div>`;
   }
 
-  function renderMonth(year,month){
-    const DAYS=['일','월','화','수','목','금','토'];
-    const label=`${year}년 ${month+1}월`;
-    const firstDay=new Date(year,month,1).getDay();
-    const lastDate=new Date(year,month+1,0).getDate();
-
-    let html=`<div class="month-label">${label}</div>`;
-    html+=`<div class="ring-row-labels">${DAYS.map(d=>`<div class="ring-row-lbl">${d}</div>`).join('')}</div>`;
-    html+='<div class="ring-grid">';
-    for(let i=0;i<firstDay;i++)html+=`<div></div>`;
-    for(let d=1;d<=lastDate;d++){
-      const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      html+=makeRingHTML(ds);
-    }
-    html+='</div>';
-    return html;
+  const WDAYS=['일','월','화','수','목','금','토'];
+  const firstDay=new Date(streakYear,streakMonth,1).getDay();
+  const lastDate=new Date(streakYear,streakMonth+1,0).getDate();
+  let html=`<div class="ring-row-labels">${WDAYS.map(d=>`<div class="ring-row-lbl">${d}</div>`).join('')}</div><div class="ring-grid">`;
+  for(let i=0;i<firstDay;i++)html+='<div></div>';
+  for(let d=1;d<=lastDate;d++){
+    const ds=`${streakYear}-${String(streakMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    html+=makeRingHTML(ds);
   }
+  html+='</div>';
+  document.getElementById('ringCal').innerHTML=html;
 
-  const prevMonth=now.getMonth()===0?11:now.getMonth()-1;
-  const prevYear=now.getMonth()===0?now.getFullYear()-1:now.getFullYear();
-  document.getElementById('ringCal').innerHTML=
-    renderMonth(prevYear,prevMonth)+
-    renderMonth(now.getFullYear(),now.getMonth());
+  // 동적 범례
+  document.getElementById('streakLegend').innerHTML=
+    categories.map((c,i)=>`
+      <span style="display:flex;align-items:center;gap:5px">
+        <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5" fill="none" stroke="var(--g200)" stroke-width="2"/><circle cx="8" cy="8" r="5" fill="none" stroke="${CAT_COLORS[i%CAT_COLORS.length]}" stroke-width="2" stroke-dasharray="16 18" stroke-linecap="round" transform="rotate(-90 8 8)"/></svg>
+        ${c.emoji} ${c.name}
+      </span>`).join('')+
+    `<span style="display:flex;align-items:center;gap:5px">
+      <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5" fill="none" stroke="var(--g200)" stroke-width="2"/><circle cx="8" cy="8" r="5" fill="none" stroke="#1d9e75" stroke-width="2" stroke-dasharray="16 18" stroke-linecap="round" transform="rotate(-90 8 8)"/></svg>복합
+    </span>
+    <span style="color:var(--g400);font-size:10px">링 크기 = 학습량</span>`;
 
-  // 스트릭 계산
+  // 연속일 계산
   const allDates=[...new Set(logs.map(l=>l.date))].sort();
   let streak=0;
   if(logMap[td]){
