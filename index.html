@@ -349,21 +349,33 @@ let driveFileId = null;
 let driveUser = null;
 let driveSaving = false;
 
-function driveLogin(){
+function driveLogin(silent=false){
   const client = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
+    prompt: silent ? 'none' : '',
     callback: async(resp) => {
-      if(resp.error){ toast('로그인 실패: '+resp.error); return; }
+      if(resp.error){
+        if(!silent) toast('로그인 실패: '+resp.error);
+        return;
+      }
       driveToken = resp.access_token;
+      localStorage.setItem('sl2-drive-hint', '1'); // 자동 재연결 힌트
       await fetchDriveProfile();
       await driveLoad();
       updateDriveUI();
-      toast('Google Drive 연결됐어요!');
+      if(!silent) toast('Google Drive 연결됐어요!');
     }
   });
   client.requestAccessToken();
 }
+
+// 페이지 로드 시 자동 재연결
+window.addEventListener('load', ()=>{
+  if(localStorage.getItem('sl2-drive-hint')){
+    setTimeout(()=>{ try{ driveLogin(true); }catch(e){} }, 1500);
+  }
+});
 
 async function fetchDriveProfile(){
   try{
@@ -453,6 +465,7 @@ async function driveSave(){
 
 function driveLogout(){
   driveToken = null; driveFileId = null; driveUser = null;
+  localStorage.removeItem('sl2-drive-hint');
   updateDriveUI();
   toast('로그아웃됐어요');
 }
@@ -662,7 +675,11 @@ function sw(name,el){
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
   document.getElementById('sec-'+name).classList.add('on');
   if(name==='stats')renderStats();
-  if(name==='streak')renderStreak();
+  if(name==='streak'){
+    streakYear=new Date().getFullYear();
+    streakMonth=new Date().getMonth();
+    renderStreak();
+  }
 }
 
 // 기록
