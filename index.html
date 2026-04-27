@@ -391,6 +391,11 @@ async function driveLoad(){
       );
       const saved = await fr.json();
       // 병합: Drive 데이터 + 로컬 데이터
+      if(saved.categories){
+        categories = saved.categories;
+        saveCats();
+        renderCatSelects();
+      }
       if(saved.logs){
         const existIds = new Set(logs.map(l=>l.id));
         const newLogs = saved.logs.filter(l=>!existIds.has(l.id));
@@ -420,7 +425,7 @@ async function driveSave(){
   driveSaving = true;
   setSyncIcon(true);
   try{
-    const body = JSON.stringify({logs, words, sentences, savedAt: new Date().toISOString(), version:2});
+    const body = JSON.stringify({logs, words, sentences, categories, savedAt: new Date().toISOString(), version:3});
     if(driveFileId){
       // 업데이트
       await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,{
@@ -469,9 +474,9 @@ function updateDriveUI(){
     bar.innerHTML=`
       <div class="drive-user">
         ${driveUser.picture?`<img class="drive-avatar" src="${driveUser.picture}" referrerpolicy="no-referrer">`:''}
-        <span>${driveUser.name||driveUser.email||'연결됨'}</span>
+        <span>${driveUser.name||driveUser.email||''}</span>
         <svg id="driveSyncIco" class="drive-sync-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-        <span class="drive-status" id="driveSyncTime">연결됨</span>
+        <span class="drive-status" id="driveSyncTime">동기화 준비</span>
       </div>
       <button class="drive-btn" onclick="driveLogout()">로그아웃</button>`;
     if(settingsSection) settingsSection.innerHTML=`
