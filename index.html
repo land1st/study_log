@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>study.log</title>
+<title>underline.</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
 <style>
@@ -132,7 +132,7 @@ html,body{background:var(--g50);font-family:'Pretendard',-apple-system,sans-seri
 <div class="app">
 
 <div class="hd">
-  <div class="logo">study.log</div>
+  <div class="logo">underline.</div>
   <div class="hd-right">
     <div class="today-pill" id="todayPill"></div>
     <div class="settings-btn" onclick="openSettings()" title="설정">
@@ -167,7 +167,7 @@ html,body{background:var(--g50);font-family:'Pretendard',-apple-system,sans-seri
     <div class="form-row">
       <div class="fg" style="flex:0 0 auto;min-width:90px">
         <label>카테고리</label>
-        <select id="cat"><option value="lang">🗣 언어</option><option value="book">📚 독서</option><option value="bible">✝️ 성경</option></select>
+        <select id="cat"></select>
       </div>
       <div class="fg"><label>내용</label><input id="ltitle" placeholder="예) 영단어 50개, 채식주의자"/></div>
     </div>
@@ -243,11 +243,7 @@ html,body{background:var(--g50);font-family:'Pretendard',-apple-system,sans-seri
       </div>
       <div class="fg" style="flex:0 0 auto;min-width:90px">
         <label>카테고리</label>
-        <select id="sent-cat">
-          <option value="book">📚 독서</option>
-          <option value="lang">🗣 언어</option>
-          <option value="bible">✝️ 성경</option>
-        </select>
+        <select id="sent-cat"></select>
       </div>
     </div>
     <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="addSent()">+ 추가</button>
@@ -270,6 +266,17 @@ html,body{background:var(--g50);font-family:'Pretendard',-apple-system,sans-seri
     </div>
 
     <div class="sheet-sec">
+      <div class="sheet-sec-title">카테고리 관리</div>
+      <div id="catManageList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
+      <div style="display:flex;gap:8px">
+        <input id="catNameInput" placeholder="카테고리 이름 (예: 영어, 운동, 성경)" style="font-family:'Pretendard',sans-serif;font-size:13px;padding:8px 10px;border:1px solid var(--g200);border-radius:8px;background:var(--g50);color:var(--g900);outline:none;flex:1;transition:border-color .15s"/>
+        <button class="btn btn-primary" style="padding:8px 14px;font-size:12px;flex-shrink:0" onclick="addCategory()">+ 추가</button>
+      </div>
+      <div style="font-size:11px;color:var(--g400);margin-top:6px;line-height:1.6">이름을 입력하면 이모지를 자동으로 매칭해드려요</div>
+    </div>
+
+    <div class="sheet-sec">
+      <div class="sheet-sec-title">테마 색상</div>
       <div class="theme-swatches" id="themeSwatches"></div>
     </div>
 
@@ -296,7 +303,7 @@ html,body{background:var(--g50);font-family:'Pretendard',-apple-system,sans-seri
 </div>
 
 <div style="text-align:center;padding:24px 16px 32px;border-top:1px solid var(--g100);margin-top:8px">
-  <div style="font-size:12px;font-weight:600;color:var(--g400);letter-spacing:.5px;margin-bottom:4px">study.log</div>
+  <div style="font-size:12px;font-weight:600;color:var(--g400);letter-spacing:.5px;margin-bottom:4px">underline.</div>
   <div style="font-size:11px;color:var(--g200)">꾸준함이 실력이 된다 · made by <strong style="color:var(--g400)">land1st</strong> · © 2026</div>
 </div>
 
@@ -319,7 +326,11 @@ html,body{background:var(--g50);font-family:'Pretendard',-apple-system,sans-seri
 <script>
 let logs = JSON.parse(localStorage.getItem('sl2-logs')||'[]');
 let words = JSON.parse(localStorage.getItem('sl2-words')||'[]');
-let dc=null, cc=null, selectedTheme='일상생활', addedSet=new Set();
+let dc=null, cc=null;
+
+const DEFAULT_CATS = [{id:'book', name:'독서', emoji:'📚'}];
+let categories = JSON.parse(localStorage.getItem('sl2-cats')||'null') || DEFAULT_CATS;
+const saveCats = () => localStorage.setItem('sl2-cats', JSON.stringify(categories));
 
 const THEMES = [
   {name:'퍼플', primary:'#534ab7', light:'#eeedfe', mid:'#7f77dd', dark:'#3c3489'},
@@ -526,7 +537,82 @@ function pickTheme(name){
 initTheme();
 
 // 설정 패널
-function openSettings(){renderSwatches();updateDriveUI();document.getElementById('settingsOverlay').classList.add('open');}
+function openSettings(){renderSwatches();updateDriveUI();renderCatManageList();document.getElementById('settingsOverlay').classList.add('open');}
+
+// ── 카테고리 ─────────────────────────────────────────
+const EMOJI_MAP = [
+  {keys:['영어','영단어','language','english','언어'],emoji:'🗣'},
+  {keys:['독서','책','reading','book'],emoji:'📚'},
+  {keys:['성경','bible','말씀','묵상'],emoji:'✝️'},
+  {keys:['운동','헬스','gym','workout','fitness'],emoji:'💪'},
+  {keys:['러닝','달리기','run','running','조깅'],emoji:'🏃'},
+  {keys:['수학','math','수학공부'],emoji:'📐'},
+  {keys:['코딩','프로그래밍','coding','개발'],emoji:'💻'},
+  {keys:['명상','meditation','마음'],emoji:'🧘'},
+  {keys:['일기','journal','diary'],emoji:'📓'},
+  {keys:['음악','악기','guitar','piano','피아노','기타'],emoji:'🎵'},
+  {keys:['그림','드로잉','drawing','art'],emoji:'🎨'},
+  {keys:['요리','cooking','chef'],emoji:'🍳'},
+  {keys:['공부','study','학습'],emoji:'✏️'},
+  {keys:['일본어','japanese','일본'],emoji:'🇯🇵'},
+  {keys:['중국어','chinese','중국'],emoji:'🇨🇳'},
+  {keys:['스페인어','spanish'],emoji:'🇪🇸'},
+  {keys:['독일어','german'],emoji:'🇩🇪'},
+  {keys:['프랑스어','french'],emoji:'🇫🇷'},
+  {keys:['자격증','시험','exam'],emoji:'📜'},
+  {keys:['독서록','서평'],emoji:'📝'},
+];
+
+function matchEmoji(name){
+  const lower = name.toLowerCase();
+  for(const m of EMOJI_MAP){
+    if(m.keys.some(k=>lower.includes(k))) return m.emoji;
+  }
+  return '📌';
+}
+
+function addCategory(){
+  const name = document.getElementById('catNameInput').value.trim();
+  if(!name){ toast('카테고리 이름을 입력해주세요'); return; }
+  if(categories.find(c=>c.name===name)){ toast('이미 있는 카테고리예요'); return; }
+  const emoji = matchEmoji(name);
+  const id = 'cat_'+Date.now();
+  categories.push({id, name, emoji});
+  saveCats();
+  renderCatManageList();
+  renderCatSelects();
+  document.getElementById('catNameInput').value='';
+  toast(`${emoji} ${name} 추가됐어요`);
+}
+
+function delCategory(id){
+  if(categories.length<=1){ toast('최소 1개의 카테고리가 필요해요'); return; }
+  categories = categories.filter(c=>c.id!==id);
+  saveCats();
+  renderCatManageList();
+  renderCatSelects();
+  toast('카테고리가 삭제됐어요');
+}
+
+function renderCatManageList(){
+  const el = document.getElementById('catManageList');
+  el.innerHTML = categories.map(c=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;border:1px solid var(--g200);background:var(--g50)">
+      <span style="font-size:16px">${c.emoji}</span>
+      <span style="font-size:13px;font-weight:500;flex:1">${c.name}</span>
+      <button onclick="delCategory('${c.id}')" style="background:none;border:none;color:var(--g200);cursor:pointer;font-size:16px;padding:2px 4px;transition:color .15s" onmouseover="this.style.color='#e24b4a'" onmouseout="this.style.color='var(--g200)'">×</button>
+    </div>`).join('');
+}
+
+function renderCatSelects(){
+  const opts = categories.map(c=>`<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('');
+  const catEl = document.getElementById('cat');
+  const sentCatEl = document.getElementById('sent-cat');
+  if(catEl) catEl.innerHTML = opts;
+  if(sentCatEl) sentCatEl.innerHTML = opts;
+}
+
+function getCat(id){ return categories.find(c=>c.id===id) || {id, name:id, emoji:'📌'}; }
 function closeSettings(){document.getElementById('settingsOverlay').classList.remove('open');}
 function overlayClick(e){if(e.target===document.getElementById('settingsOverlay'))closeSettings();}
 
@@ -659,10 +745,10 @@ function renderLogs(){
     const safeKey=date.replace(/-/g,'');
     const items=grouped[date].map(l=>`
       <div class="log-item">
-        <div class="log-dot ${l.cat==='lang'?'dot-lang':l.cat==='bible'?'dot-bible':'dot-book'}">${l.cat==='lang'?'🗣':l.cat==='bible'?'✝️':'📚'}</div>
+        <div class="log-dot" style="background:${getCat(l.cat).emoji?'var(--primary-light)':'var(--g100)'}">${getCat(l.cat).emoji}</div>
         <div class="log-body">
           <div class="log-name">${l.title}</div>
-          <div class="log-sub">${l.memo?l.memo+' · ':''}<span class="badge badge-${l.cat}">${l.cat==='lang'?'언어':l.cat==='bible'?'성경':'독서'}</span></div>
+          <div class="log-sub">${l.memo?l.memo+' · ':''}<span class="badge" style="background:var(--primary-light);color:var(--primary-dark)">${getCat(l.cat).emoji} ${getCat(l.cat).name}</span></div>
         </div>
         <div class="log-right">
           <div class="log-min">${l.min}분</div>
@@ -704,16 +790,23 @@ function goLogPage(p){
 // 통계
 function renderStats(){
   const total=logs.reduce((s,l)=>s+l.min,0);
-  const lang=logs.filter(l=>l.cat==='lang').reduce((s,l)=>s+l.min,0);
-  const book=logs.filter(l=>l.cat==='book').reduce((s,l)=>s+l.min,0);
-  const bible=logs.filter(l=>l.cat==='bible').reduce((s,l)=>s+l.min,0);
   const uDays=new Set(logs.map(l=>l.date)).size;
+  const pc=getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+
+  // 카테고리별 집계
+  const CAT_COLORS=['#534ab7','#ba7517','#1d9e75','#993c1d','#185fa5','#6b7040','#9a7a5f','#d94f4f'];
+  const catMins = categories.map(c=>({
+    ...c,
+    min: logs.filter(l=>l.cat===c.id).reduce((s,l)=>s+l.min,0),
+    color: CAT_COLORS[categories.indexOf(c)%CAT_COLORS.length]
+  }));
+
   document.getElementById('statGrid').innerHTML=`
     <div class="stat-box total-box"><div class="stat-lbl">총 학습 시간</div><div class="stat-val">${Math.round(total/60*10)/10}<span class="stat-unit">h</span></div></div>
     <div class="stat-box days-box"><div class="stat-lbl">학습한 날</div><div class="stat-val">${uDays}<span class="stat-unit">일</span></div></div>
-    <div class="stat-box lang-box"><div class="stat-lbl">언어 공부</div><div class="stat-val">${lang}<span class="stat-unit">분</span></div></div>
-    <div class="stat-box book-box"><div class="stat-lbl">독서</div><div class="stat-val">${book}<span class="stat-unit">분</span></div></div>
-    ${bible?`<div class="stat-box" style="background:#f0ede8;grid-column:1/-1"><div class="stat-lbl">성경 읽기</div><div class="stat-val" style="color:#6b5344">${bible}<span class="stat-unit">분</span></div></div>`:''}`;
+    ${catMins.filter(c=>c.min>0).map(c=>`
+    <div class="stat-box" style="background:${c.color}18"><div class="stat-lbl">${c.emoji} ${c.name}</div><div class="stat-val" style="color:${c.color}">${c.min}<span class="stat-unit">분</span></div></div>`).join('')}`;
+
   const d14=[],l14=[];
   const localDate=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   for(let i=13;i>=0;i--){
@@ -722,17 +815,30 @@ function renderStats(){
     d14.push(ds.slice(5));
     l14.push(logs.filter(l=>l.date===ds).reduce((s,l)=>s+l.min,0));
   }
-  const pc=getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
   if(dc)dc.destroy();
   dc=new Chart(document.getElementById('dailyC'),{type:'bar',data:{labels:d14,datasets:[{label:'분',data:l14,backgroundColor:pc,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},autoSkip:true,maxRotation:45}},y:{ticks:{font:{size:10}},beginAtZero:true}}}});
+
   if(cc)cc.destroy();
-  const nd=!lang&&!book&&!bible;
-  cc=new Chart(document.getElementById('catC'),{type:'doughnut',data:{labels:['언어','독서','성경'],datasets:[{data:nd?[1,1,1]:[lang||0.01,book||0.01,bible||0.01],backgroundColor:[pc,'#ba7517','#a0856e'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'70%'}});
-  const tot=lang+book+bible||1;
-  document.getElementById('catLeg').innerHTML=`
-    <div style="margin-bottom:6px;display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:${pc};display:inline-block;flex-shrink:0"></span>언어 <strong style="margin-left:auto">${lang}분</strong> <span style="color:var(--g400)">${Math.round(lang/tot*100)}%</span></div>
-    <div style="margin-bottom:6px;display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:#ba7517;display:inline-block;flex-shrink:0"></span>독서 <strong style="margin-left:auto">${book}분</strong> <span style="color:var(--g400)">${Math.round(book/tot*100)}%</span></div>
-    <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:#a0856e;display:inline-block;flex-shrink:0"></span>성경 <strong style="margin-left:auto">${bible}분</strong> <span style="color:var(--g400)">${Math.round(bible/tot*100)}%</span></div>`;
+  const hasData = catMins.some(c=>c.min>0);
+  cc=new Chart(document.getElementById('catC'),{
+    type:'doughnut',
+    data:{
+      labels:catMins.map(c=>c.name),
+      datasets:[{
+        data:hasData?catMins.map(c=>c.min||0.01):catMins.map(()=>1),
+        backgroundColor:catMins.map(c=>c.color),
+        borderWidth:0
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'70%'}
+  });
+  const tot=catMins.reduce((s,c)=>s+c.min,0)||1;
+  document.getElementById('catLeg').innerHTML=catMins.map((c,i)=>`
+    <div style="margin-bottom:${i<catMins.length-1?'6px':'0'};display:flex;align-items:center;gap:6px">
+      <span style="width:10px;height:10px;border-radius:2px;background:${c.color};display:inline-block;flex-shrink:0"></span>
+      ${c.emoji} ${c.name} <strong style="margin-left:auto">${c.min}분</strong>
+      <span style="color:var(--g400)">${Math.round(c.min/tot*100)}%</span>
+    </div>`).join('');
 }
 
 // 스트릭
@@ -740,18 +846,18 @@ function renderStreak(){
   const now=new Date();
   const td=today();
 
-  // 학습 데이터 맵 {date: {min, lang, book}}
+  // 학습 데이터 맵
   const logMap={};
   logs.forEach(l=>{
-    if(!logMap[l.date])logMap[l.date]={min:0,lang:false,book:false,bible:false};
+    if(!logMap[l.date])logMap[l.date]={min:0,cats:new Set()};
     logMap[l.date].min+=l.min;
-    logMap[l.date][l.cat]=true;
+    logMap[l.date].cats.add(l.cat);
   });
 
   // 최대 학습 분 (링 비율 계산용)
   const allMins=Object.values(logMap).map(v=>v.min);
   const maxMin=Math.max(...allMins,60);
-
+  const CAT_COLORS=['#534ab7','#ba7517','#1d9e75','#993c1d','#185fa5','#6b7040','#9a7a5f','#d94f4f'];
   const pc=getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
 
   function makeRingHTML(dateStr){
@@ -761,22 +867,17 @@ function renderStreak(){
     const isToday=dateStr===td;
     const isFuture=dateStr>td;
     const r=12, circ=2*Math.PI*r;
-
-    let ringColor=pc;
-    let ratio=0;
-    let numText='';
-
+    let ringColor=pc, ratio=0, numText='';
     if(m&&!isFuture){
       ratio=Math.min(m.min/maxMin,1);
       if(ratio<0.08)ratio=0.08;
       numText=m.min>=60?`${Math.round(m.min/60)}h`:m.min+'';
-      if(m.lang&&m.book&&m.bible)ringColor='#1d9e75';
-      else if(m.lang&&m.book)ringColor='#1d9e75';
-      else if(m.lang&&m.bible)ringColor='#1d9e75';
-      else if(m.book&&m.bible)ringColor='#8a6a56';
-      else if(m.bible)ringColor='#a0856e';
-      else if(m.book)ringColor='#ba7517';
-      else ringColor=pc;
+      const catsArr=[...m.cats];
+      if(catsArr.length>1){ ringColor='#1d9e75'; }
+      else {
+        const idx=categories.findIndex(c=>c.id===catsArr[0]);
+        ringColor=idx>=0?CAT_COLORS[idx%CAT_COLORS.length]:pc;
+      }
     }
 
     const dash=ratio*circ;
@@ -877,13 +978,13 @@ function renderSents(){
       <div class="sent-quote">${s.text}</div>
       <div class="sent-meta">
         ${s.src?`<span class="sent-source">${s.src}</span>`:''}
-        <span class="sent-tag ${s.cat}">${s.cat==='lang'?'🗣 언어':s.cat==='bible'?'✝️ 성경':'📚 독서'}</span>
+        <span class="sent-tag" style="background:var(--primary-light);color:var(--primary-dark)">${getCat(s.cat).emoji} ${getCat(s.cat).name}</span>
         <span class="sent-date">${s.date}</span>
       </div>
     </div>`).join('');
 }
 
-renderLogs(); renderSents();
+renderCatSelects(); renderLogs(); renderSents();
 </script>
 </body>
 </html>
