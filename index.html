@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>study.log</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#534ab7;--primary-light:#eeedfe;--primary-mid:#7f77dd;--primary-dark:#3c3489;
+  --t100:#e1f5ee;--t400:#1d9e75;--t600:#0f6e56;
+  --a100:#faeeda;--a400:#ba7517;--a600:#854f0b;
+  --g50:#f8f7f4;--g100:#f1efe8;--g200:#d3d1c7;--g400:#888780;--g700:#444441;--g900:#1a1916;
+}
+html,body{background:var(--g50);font-family:'Pretendard',-apple-system,sans-serif;color:var(--g900);font-size:14px;line-height:1.5}
+.app{max-width:480px;margin:0 auto;background:var(--g50)}
+.hd{padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:17px;font-weight:700;letter-spacing:-.3px;color:var(--g900)}
+.hd-right{display:flex;align-items:center;gap:8px}
+.today-pill{background:var(--primary-light);color:var(--primary-dark);font-size:11px;font-weight:500;padding:4px 10px;border-radius:20px}
+.settings-btn{width:32px;height:32px;border-radius:50%;background:#fff;border:1px solid var(--g200);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s}
+.settings-btn:hover{background:var(--g100)}
+.tabs{display:flex;gap:6px;padding:0 16px 12px}
+.tab{flex:1;padding:8px 4px;font-size:12px;font-weight:500;color:var(--g400);cursor:pointer;text-align:center;border-radius:20px;border:1px solid var(--g200);background:#fff;transition:all .18s}
+.tab.on{color:#fff;background:var(--primary);border-color:var(--primary)}
+.main{padding:0 16px 24px}
+.card{background:#fff;border-radius:12px;border:1px solid var(--g200);padding:16px;margin-bottom:12px}
+.card-title{font-size:11px;font-weight:500;color:var(--g400);letter-spacing:.4px;margin-bottom:12px}
+.form-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.fg{display:flex;flex-direction:column;gap:4px;flex:1;min-width:100px}
+.fg label{font-size:11px;color:var(--g400);font-weight:500}
+.fg input,.fg select{font-family:'Pretendard',sans-serif;font-size:13px;padding:8px 10px;border:1px solid var(--g200);border-radius:8px;background:var(--g50);color:var(--g900);outline:none;transition:border-color .15s}
+.fg input:focus,.fg select:focus{border-color:var(--primary)}
+.btn{font-family:'Pretendard',sans-serif;font-size:13px;font-weight:500;padding:9px 16px;border-radius:8px;cursor:pointer;border:none;transition:opacity .15s;white-space:nowrap}
+.btn:hover{opacity:.85}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-outline{background:#fff;border:1px solid var(--g200);color:var(--g700)}
+.sec{display:none}.sec.on{display:block}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-lang{background:var(--primary-light);color:var(--primary-dark)}
+.badge-book{background:var(--a100);color:var(--a600)}
+.badge-bible{background:#f0ede8;color:#6b5344}
+.log-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--g100)}
+.log-item:last-child{border-bottom:none}
+.log-dot{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.dot-lang{background:var(--primary-light)}.dot-book{background:var(--a100)}.dot-bible{background:#f0ede8}
+.log-body{flex:1;min-width:0}
+.log-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.log-sub{font-size:11px;color:var(--g400);margin-top:2px}
+.log-right{text-align:right;flex-shrink:0}
+.log-min{font-size:14px;font-weight:600;color:var(--primary)}
+.log-date{font-size:10px;color:var(--g400)}
+.del{background:none;border:none;color:var(--g200);cursor:pointer;font-size:16px;padding:2px 4px;line-height:1;transition:color .15s}
+.del:hover{color:#e24b4a}
+.stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.stat-box{border-radius:10px;padding:14px}
+.stat-box.lang-box{background:var(--primary-light)}.stat-box.book-box{background:var(--a100)}
+.stat-box.total-box{background:var(--t100)}.stat-box.days-box{background:var(--g100)}
+.stat-lbl{font-size:10px;font-weight:500;color:var(--g400);margin-bottom:4px}
+.stat-val{font-size:22px;font-weight:600}
+.lang-box .stat-val{color:var(--primary-dark)}.book-box .stat-val{color:var(--a600)}
+.total-box .stat-val{color:var(--t600)}.days-box .stat-val{color:var(--g700)}
+.stat-unit{font-size:11px;font-weight:400;color:var(--g400)}
+.chart-wrap{position:relative;width:100%}
+.cal-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.streak-nums{display:flex;gap:16px}
+.sn .v{font-size:20px;font-weight:600;color:var(--primary)}
+.sn .l{font-size:10px;color:var(--g400)}
+.month-label{font-size:12px;font-weight:600;color:var(--g700);margin:16px 0 8px;padding-top:12px;border-top:1px solid var(--g100)}
+.ring-row-labels{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.ring-row-lbl{font-size:9px;color:var(--g400);text-align:center}
+.ring-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.ring-cell{display:flex;flex-direction:column;align-items:center;gap:2px}
+.ring-wrap{position:relative;width:32px;height:32px}
+.ring-wrap svg{position:absolute;top:0;left:0;transform:rotate(-90deg)}
+.ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:var(--g700);line-height:1}
+.ring-day{font-size:9px;color:var(--g400);text-align:center}
+.ring-day.today{color:var(--primary);font-weight:700}
+.ring-wrap.today-ring circle.track{stroke:var(--g100)}
+.ring-wrap.today-ring{outline:2px solid var(--primary);border-radius:50%;outline-offset:1px}
+.word-section-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sent-list{display:flex;flex-direction:column;gap:10px}
+.sent-card{background:#fff;border-radius:12px;border:1px solid var(--g200);padding:16px;position:relative}
+.sent-card:hover .sent-del{opacity:1}
+.sent-quote{font-family:'Pretendard',sans-serif;font-size:14px;color:var(--g900);line-height:1.8;font-weight:400}
+.sent-quote::before{content:'"';font-size:20px;color:var(--primary);font-family:'Pretendard',sans-serif;line-height:0;vertical-align:-4px;margin-right:2px}
+.sent-quote::after{content:'"';font-size:20px;color:var(--primary);font-family:'Pretendard',sans-serif;line-height:0;vertical-align:-4px;margin-left:2px}
+.sent-meta{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.sent-source{font-size:11px;color:var(--g400)}
+.sent-source::before{content:'— '}
+.sent-tag{font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px}
+.sent-tag.lang{background:var(--primary-light);color:var(--primary-dark)}
+.sent-tag.book{background:var(--a100);color:var(--a600)}
+.sent-tag.bible{background:#f0ede8;color:#6b5344}
+.sent-date{font-size:10px;color:var(--g200);margin-left:auto}
+.sent-del{position:absolute;top:12px;right:12px;background:none;border:none;font-size:13px;color:var(--g200);cursor:pointer;opacity:0;transition:opacity .15s}
+.sent-del:hover{color:#e24b4a}
+.today-sent{background:var(--primary-light);border-radius:12px;padding:16px;margin-bottom:12px;position:relative}
+.today-sent-label{font-size:10px;font-weight:500;color:var(--primary);letter-spacing:.4px;margin-bottom:8px}
+.today-sent-text{font-family:'Pretendard',sans-serif;font-size:13px;color:var(--primary-dark);line-height:1.8}
+.today-sent-src{font-size:11px;color:var(--primary);margin-top:6px;opacity:.7}
+
+/* 설정 시트 */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:flex-end;justify-content:center}
+.overlay.open{display:flex}
+.settings-sheet{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:20px 20px 36px;max-height:80vh;overflow-y:auto}
+.sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--g200);margin:0 auto 18px}
+.sheet-title{font-size:15px;font-weight:600;margin-bottom:20px}
+.sheet-sec{margin-bottom:24px}
+.sheet-sec-title{font-size:11px;font-weight:500;color:var(--g400);letter-spacing:.4px;margin-bottom:12px}
+.theme-swatches{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.swatch{width:34px;height:34px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:transform .15s,border-color .15s;flex-shrink:0}
+.swatch.on{border-color:var(--g900);transform:scale(1.12)}
+.data-btns{display:flex;flex-direction:column;gap:8px}
+.data-btn{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:1px solid var(--g200);background:var(--g50);cursor:pointer;font-family:'Pretendard',sans-serif;font-size:13px;color:var(--g900);transition:background .15s;width:100%;text-align:left}
+.data-btn:hover{background:var(--g100)}
+.data-btn-icon{color:var(--g400);flex-shrink:0}
+.data-btn-label{font-weight:500;font-size:13px}
+.data-btn-desc{font-size:11px;color:var(--g400);margin-top:1px}
+.data-btn.danger .data-btn-label{color:#e24b4a}
+.data-btn.danger .data-btn-icon{color:#e24b4a}
+
+.empty{padding:40px 16px;text-align:center;color:var(--g400);font-size:13px}
+.empty .ei{font-size:32px;margin-bottom:8px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--g900);color:#fff;font-size:12px;font-family:'Pretendard',sans-serif;padding:9px 18px;border-radius:8px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;white-space:nowrap}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="hd">
+  <div class="logo">study.log</div>
+  <div class="hd-right">
+    <div class="today-pill" id="todayPill"></div>
+    <div class="settings-btn" onclick="openSettings()" title="설정">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<div class="drive-bar" id="driveBar">
+  <div class="drive-user" id="driveUser">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--g200)"><path d="M22 12V6l-8-4-8 4v6c0 5 8 8 8 8s8-3 8-8z"/></svg>
+    <span style="color:var(--g400)">로그인하면 Drive에 자동 저장돼요</span>
+  </div>
+  <button class="drive-btn primary" onclick="driveLogin()">Google 로그인</button>
+</div>
+
+<div class="tabs">
+  <div class="tab on" onclick="sw('log',this)">기록</div>
+  <div class="tab" onclick="sw('stats',this)">통계</div>
+  <div class="tab" onclick="sw('streak',this)">스트릭</div>
+  <div class="tab" onclick="sw('words',this)">문장</div>
+</div>
+
+<div class="main">
+
+<div class="sec on" id="sec-log">
+  <div class="card">
+    <div class="card-title">오늘의 학습 추가</div>
+    <div class="form-row">
+      <div class="fg" style="flex:0 0 auto;min-width:90px">
+        <label>카테고리</label>
+        <select id="cat"><option value="lang">🗣 언어</option><option value="book">📚 독서</option><option value="bible">✝️ 성경</option></select>
+      </div>
+      <div class="fg"><label>내용</label><input id="ltitle" placeholder="예) 영단어 50개, 채식주의자"/></div>
+    </div>
+    <div class="form-row">
+      <div class="fg" style="flex:0 0 70px"><label>시간(분)</label><input id="lmin" type="number" min="1" max="600" placeholder="30"/></div>
+      <div class="fg"><label>메모 (선택)</label><input id="lmemo" placeholder="오늘의 한마디"/></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="addLog()">+ 추가</button>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px">
+    <button onclick="changeMonth(-1)" style="background:none;border:none;cursor:pointer;padding:4px 10px;font-size:20px;color:var(--g400);line-height:1">‹</button>
+    <div id="monthLabel" style="font-size:13px;font-weight:600;color:var(--g900)"></div>
+    <button onclick="changeMonth(1)" id="monthNext" style="background:none;border:none;cursor:pointer;padding:4px 10px;font-size:20px;color:var(--g400);line-height:1">›</button>
+  </div>
+  <div id="logList"></div>
+</div>
+
+<div class="sec" id="sec-stats">
+  <div class="stat-grid" id="statGrid"></div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">최근 14일 학습 시간 (분)</div>
+    <div class="chart-wrap" style="height:200px"><canvas id="dailyC" role="img" aria-label="최근 14일 일별 학습 시간">학습 시간 데이터</canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">카테고리 비중</div>
+    <div style="display:flex;align-items:center;gap:20px">
+      <div class="chart-wrap" style="height:160px;width:160px;flex-shrink:0"><canvas id="catC" role="img" aria-label="카테고리별 비중 도넛 차트">카테고리 데이터</canvas></div>
+      <div id="catLeg" style="flex:1;font-size:12px;color:var(--g700)"></div>
+    </div>
+  </div>
+</div>
+
+<div class="sec" id="sec-streak">
+  <div class="card">
+    <div class="cal-hd">
+      <div style="font-size:12px;font-weight:500;color:var(--g400)">전월 · 당월</div>
+      <div class="streak-nums">
+        <div class="sn"><div class="v" id="curS">0</div><div class="l">연속</div></div>
+        <div class="sn" style="margin-left:16px"><div class="v" id="totD">0</div><div class="l">총 학습일</div></div>
+      </div>
+    </div>
+    <div id="ringCal"></div>
+  </div>
+  <div class="card" style="background:var(--primary-light);border-color:var(--g200)">
+    <div style="font-size:11px;font-weight:500;color:var(--primary-dark);margin-bottom:8px">범례</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--g700);align-items:center">
+      <span style="display:flex;align-items:center;gap:6px">
+        <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="6" fill="none" stroke="var(--g200)" stroke-width="2.5"/><circle cx="9" cy="9" r="6" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-dasharray="18 20" stroke-linecap="round" transform="rotate(-90 9 9)"/></svg>언어
+      </span>
+      <span style="display:flex;align-items:center;gap:6px">
+        <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="6" fill="none" stroke="var(--g200)" stroke-width="2.5"/><circle cx="9" cy="9" r="6" fill="none" stroke="#ba7517" stroke-width="2.5" stroke-dasharray="18 20" stroke-linecap="round" transform="rotate(-90 9 9)"/></svg>독서
+      </span>
+      <span style="display:flex;align-items:center;gap:6px">
+        <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="6" fill="none" stroke="var(--g200)" stroke-width="2.5"/><circle cx="9" cy="9" r="6" fill="none" stroke="var(--t400)" stroke-width="2.5" stroke-dasharray="18 20" stroke-linecap="round" transform="rotate(-90 9 9)"/></svg>둘 다
+      </span>
+      <span style="color:var(--g400)">링 크기 = 학습량</span>
+    </div>
+  </div>
+</div>
+
+<div class="sec" id="sec-words">
+  <div id="todaySent"></div>
+  <div class="card">
+    <div class="card-title">문장 추가</div>
+    <div class="fg" style="margin-bottom:8px">
+      <label>문장</label>
+      <textarea id="sent-text" rows="3" placeholder="마음에 남은 문장을 기록해보세요" style="font-family:'Pretendard',sans-serif;font-size:13px;padding:8px 10px;border:1px solid var(--g200);border-radius:8px;background:var(--g50);color:var(--g900);outline:none;resize:none;line-height:1.8;width:100%;transition:border-color .15s"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="fg">
+        <label>출처 (책 제목, 강의명 등)</label>
+        <input id="sent-src" placeholder="예) 채식주의자, 듀오링고 Unit 5"/>
+      </div>
+      <div class="fg" style="flex:0 0 auto;min-width:90px">
+        <label>카테고리</label>
+        <select id="sent-cat">
+          <option value="book">📚 독서</option>
+          <option value="lang">🗣 언어</option>
+          <option value="bible">✝️ 성경</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="addSent()">+ 추가</button>
+  </div>
+  <div class="sent-list" id="sentList"></div>
+</div>
+
+</div>
+</div>
+
+<!-- 설정 오버레이 -->
+<div class="overlay" id="settingsOverlay" onclick="overlayClick(event)">
+  <div class="settings-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">설정</div>
+
+    <div class="sheet-sec">
+      <div class="sheet-sec-title">Google Drive 동기화</div>
+      <div id="settingsDriveSection"></div>
+    </div>
+
+    <div class="sheet-sec">
+      <div class="theme-swatches" id="themeSwatches"></div>
+    </div>
+
+    <div class="sheet-sec">
+      <div class="sheet-sec-title">데이터 관리</div>
+      <div class="data-btns">
+        <button class="data-btn" onclick="exportJSON()">
+          <svg class="data-btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <div><div class="data-btn-label">JSON으로 내보내기</div><div class="data-btn-desc">다른 기기에서 불러올 수 있어요</div></div>
+        </button>
+        <button class="data-btn" onclick="document.getElementById('importFile').click()">
+          <svg class="data-btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div><div class="data-btn-label">JSON 가져오기</div><div class="data-btn-desc">내보낸 파일을 불러와요 (기존 데이터에 병합)</div></div>
+        </button>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+        <button class="data-btn danger" onclick="confirmReset()">
+          <svg class="data-btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          <div><div class="data-btn-label">데이터 초기화</div><div class="data-btn-desc">모든 기록과 단어장이 삭제돼요</div></div>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="text-align:center;padding:24px 16px 32px;border-top:1px solid var(--g100);margin-top:8px">
+  <div style="font-size:12px;font-weight:600;color:var(--g400);letter-spacing:.5px;margin-bottom:4px">study.log</div>
+  <div style="font-size:11px;color:var(--g200)">꾸준함이 실력이 된다 · made by <strong style="color:var(--g400)">land1st</strong> · © 2026</div>
+</div>
+
+<div class="toast" id="toast"></div>
+<!-- Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+.drive-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#fff;border-bottom:1px solid var(--g200);font-size:11px;min-height:36px}
+.drive-user{display:flex;align-items:center;gap:8px;color:var(--g700)}
+.drive-avatar{width:22px;height:22px;border-radius:50%;object-fit:cover}
+.drive-btn{font-family:'Pretendard',sans-serif;font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;cursor:pointer;border:1px solid var(--g200);background:#fff;color:var(--g700);transition:all .15s}
+.drive-btn:hover{background:var(--g100)}
+.drive-btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.drive-sync-ico{color:var(--g400);animation:none}
+.drive-sync-ico.spinning{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.drive-status{font-size:10px;color:var(--g400)}
+</style>
+<script>
+let logs = JSON.parse(localStorage.getItem('sl2-logs')||'[]');
+let words = JSON.parse(localStorage.getItem('sl2-words')||'[]');
+let dc=null, cc=null, selectedTheme='일상생활', addedSet=new Set();
+
+const THEMES = [
+  {name:'퍼플', primary:'#534ab7', light:'#eeedfe', mid:'#7f77dd', dark:'#3c3489'},
+  {name:'올리브', primary:'#6b7040', light:'#f0f0e4', mid:'#8f9558', dark:'#4a4d2a'},
+  {name:'코럴', primary:'#993c1d', light:'#faece7', mid:'#d85a30', dark:'#712b13'},
+  {name:'브라운', primary:'#9a7a5f', light:'#f7f0ea', mid:'#b89880', dark:'#6e5240'},
+  {name:'블루', primary:'#185fa5', light:'#e6f1fb', mid:'#378add', dark:'#0c447c'},
+  {name:'다크', primary:'#2c2c2a', light:'#f1efe8', mid:'#5f5e5a', dark:'#1a1916'},
+];
+
+const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+const save=()=>{
+  localStorage.setItem('sl2-logs',JSON.stringify(logs));
+  localStorage.setItem('sl2-words',JSON.stringify(words));
+  if(driveToken)driveSave();
+};
+const toast=msg=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);};
+
+// ── Google Drive ──────────────────────────────────────
+const CLIENT_ID = '150311410542-ds3rjmalk45fdmf68bdaqmgbaiajo6qo.apps.googleusercontent.com'; // ← 여기에 클라이언트 ID 입력
+const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+const FILE_NAME = 'studylog-data.json';
+let driveToken = null;
+let driveFileId = null;
+let driveUser = null;
+let driveSaving = false;
+
+function driveLogin(){
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: async(resp) => {
+      if(resp.error){ toast('로그인 실패: '+resp.error); return; }
+      driveToken = resp.access_token;
+      await fetchDriveProfile();
+      await driveLoad();
+      updateDriveUI();
+      toast('Google Drive 연결됐어요!');
+    }
+  });
+  client.requestAccessToken();
+}
+
+async function fetchDriveProfile(){
+  try{
+    const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo',{
+      headers:{Authorization:'Bearer '+driveToken}
+    });
+    driveUser = await r.json();
+  }catch(e){}
+}
+
+async function driveLoad(){
+  try{
+    setSyncIcon(true);
+    // appDataFolder에서 파일 찾기
+    const r = await fetch(
+      `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${FILE_NAME}'&fields=files(id,name)`,
+      {headers:{Authorization:'Bearer '+driveToken}}
+    );
+    const data = await r.json();
+    if(data.files && data.files.length>0){
+      driveFileId = data.files[0].id;
+      const fr = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,
+        {headers:{Authorization:'Bearer '+driveToken}}
+      );
+      const saved = await fr.json();
+      // 병합: Drive 데이터 + 로컬 데이터
+      if(saved.logs){
+        const existIds = new Set(logs.map(l=>l.id));
+        const newLogs = saved.logs.filter(l=>!existIds.has(l.id));
+        logs = [...newLogs,...logs].sort((a,b)=>b.id-a.id);
+      }
+      if(saved.words){
+        const existIds = new Set(words.map(w=>w.id));
+        const newWords = saved.words.filter(w=>!existIds.has(w.id));
+        words = [...newWords,...words].sort((a,b)=>b.id-a.id);
+      }
+      if(saved.sentences){
+        const existIds = new Set(sentences.map(s=>s.id));
+        const newSents = saved.sentences.filter(s=>!existIds.has(s.id));
+        sentences = [...newSents,...sentences].sort((a,b)=>b.id-a.id);
+        saveSents();
+      }
+      localStorage.setItem('sl2-logs',JSON.stringify(logs));
+      localStorage.setItem('sl2-words',JSON.stringify(words));
+      renderLogs(); renderSents();
+    }
+    setSyncIcon(false);
+  }catch(e){ setSyncIcon(false); toast('Drive 불러오기 실패'); }
+}
+
+async function driveSave(){
+  if(!driveToken || driveSaving) return;
+  driveSaving = true;
+  setSyncIcon(true);
+  try{
+    const body = JSON.stringify({logs, words, sentences, savedAt: new Date().toISOString(), version:2});
+    if(driveFileId){
+      // 업데이트
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,{
+        method:'PATCH',
+        headers:{Authorization:'Bearer '+driveToken,'Content-Type':'application/json'},
+        body
+      });
+    } else {
+      // 신규 생성
+      const meta = {name:FILE_NAME, parents:['appDataFolder']};
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(meta)],{type:'application/json'}));
+      form.append('file', new Blob([body],{type:'application/json'}));
+      const r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{
+        method:'POST', headers:{Authorization:'Bearer '+driveToken}, body:form
+      });
+      const d = await r.json();
+      driveFileId = d.id;
+    }
+    updateDriveSyncTime();
+  }catch(e){ toast('Drive 저장 실패'); }
+  driveSaving = false;
+  setSyncIcon(false);
+}
+
+function driveLogout(){
+  driveToken = null; driveFileId = null; driveUser = null;
+  updateDriveUI();
+  toast('로그아웃됐어요');
+}
+
+function setSyncIcon(spinning){
+  const ico = document.getElementById('driveSyncIco');
+  if(ico) ico.classList.toggle('spinning', spinning);
+}
+
+function updateDriveSyncTime(){
+  const el = document.getElementById('driveSyncTime');
+  if(el){ const now=new Date(); el.textContent=`${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 동기화`; }
+}
+
+function updateDriveUI(){
+  const bar = document.getElementById('driveBar');
+  const settingsSection = document.getElementById('settingsDriveSection');
+  if(driveToken && driveUser){
+    bar.innerHTML=`
+      <div class="drive-user">
+        ${driveUser.picture?`<img class="drive-avatar" src="${driveUser.picture}" referrerpolicy="no-referrer">`:''}
+        <span>${driveUser.name||driveUser.email}</span>
+        <svg id="driveSyncIco" class="drive-sync-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <span class="drive-status" id="driveSyncTime">연결됨</span>
+      </div>
+      <button class="drive-btn" onclick="driveLogout()">로그아웃</button>`;
+    if(settingsSection) settingsSection.innerHTML=`
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;background:var(--t100);border:1px solid var(--g200)">
+        ${driveUser.picture?`<img class="drive-avatar" src="${driveUser.picture}" referrerpolicy="no-referrer" style="width:28px;height:28px">`:''}
+        <div><div style="font-size:13px;font-weight:500">${driveUser.name||''}</div><div style="font-size:11px;color:var(--g400)">${driveUser.email||''}</div></div>
+        <button class="drive-btn" style="margin-left:auto" onclick="driveLogout();closeSettings()">로그아웃</button>
+      </div>
+      <div style="font-size:11px;color:var(--g400);margin-top:8px;line-height:1.6">저장/수정 시 Drive에 자동 동기화돼요.<br>앱 전용 폴더(appDataFolder)에 저장되며 다른 파일에 접근하지 않아요.</div>`;
+  } else {
+    bar.innerHTML=`
+      <div class="drive-user">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--g200)"><path d="M22 12V6l-8-4-8 4v6c0 5 8 8 8 8s8-3 8-8z"/></svg>
+        <span style="color:var(--g400)">로그인하면 Drive에 자동 저장돼요</span>
+      </div>
+      <button class="drive-btn primary" onclick="driveLogin()">Google 로그인</button>`;
+    if(settingsSection) settingsSection.innerHTML=`
+      <button class="data-btn" onclick="driveLogin()">
+        <svg class="data-btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12V6l-8-4-8 4v6c0 5 8 8 8 8s8-3 8-8z"/></svg>
+        <div><div class="data-btn-label">Google로 로그인</div><div class="data-btn-desc">Drive에 자동 저장 · 기기 간 동기화</div></div>
+      </button>`;
+  }
+}
+// ─────────────────────────────────────────────────────
+
+const DAYS=['일','월','화','수','목','금','토'];
+const td=new Date();
+document.getElementById('todayPill').textContent=`${td.getMonth()+1}월 ${td.getDate()}일 ${DAYS[td.getDay()]}요일`;
+
+// 테마
+function applyTheme(t){
+  const r=document.documentElement.style;
+  r.setProperty('--primary',t.primary);
+  r.setProperty('--primary-light',t.light);
+  r.setProperty('--primary-mid',t.mid);
+  r.setProperty('--primary-dark',t.dark);
+  localStorage.setItem('sl2-theme',t.name);
+}
+function initTheme(){
+  const saved=localStorage.getItem('sl2-theme');
+  applyTheme(THEMES.find(t=>t.name===saved)||THEMES[0]);
+}
+function renderSwatches(){
+  const saved=localStorage.getItem('sl2-theme')||'퍼플';
+  document.getElementById('themeSwatches').innerHTML=THEMES.map(t=>`
+    <div class="swatch${t.name===saved?' on':''}" title="${t.name}" style="background:${t.primary}"
+      onclick="pickTheme('${t.name}')"></div>`).join('');
+}
+function pickTheme(name){
+  applyTheme(THEMES.find(t=>t.name===name));
+  renderSwatches();
+  toast(`${name} 테마로 변경됐어요`);
+}
+initTheme();
+
+// 설정 패널
+function openSettings(){renderSwatches();updateDriveUI();document.getElementById('settingsOverlay').classList.add('open');}
+function closeSettings(){document.getElementById('settingsOverlay').classList.remove('open');}
+function overlayClick(e){if(e.target===document.getElementById('settingsOverlay'))closeSettings();}
+
+// JSON 내보내기
+function exportJSON(){
+  const data={logs,words,sentences,exportedAt:new Date().toISOString(),version:2};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`studylog-${today()}.json`;a.click();
+  URL.revokeObjectURL(url);
+  toast('studylog 파일이 저장됐어요');
+}
+
+// JSON 가져오기
+function importJSON(event){
+  const file=event.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.logs||!data.words){toast('올바른 파일이 아니에요');return;}
+      if(!confirm('현재 데이터에 병합됩니다.\n계속할까요?'))return;
+      const existLogIds=new Set(logs.map(l=>l.id));
+      const existWordIds=new Set(words.map(w=>w.id));
+      const newLogs=data.logs.filter(l=>!existLogIds.has(l.id));
+      const newWords=data.words.filter(w=>!existWordIds.has(w.id));
+      logs=[...newLogs,...logs].sort((a,b)=>b.id-a.id);
+      words=[...newWords,...words].sort((a,b)=>b.id-a.id);
+      const existSentIds=new Set(sentences.map(s=>s.id));
+      const newSents=(data.sentences||[]).filter(s=>!existSentIds.has(s.id));
+      sentences=[...newSents,...sentences].sort((a,b)=>b.id-a.id);
+      saveSents();
+      save();renderLogs();renderSents();
+      toast(`기록 ${newLogs.length}개, 문장 ${newSents.length}개 추가됐어요`);
+    }catch{toast('파일을 읽는 중 오류가 발생했어요');}
+    event.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+// 초기화
+function confirmReset(){
+  if(!confirm('모든 학습 기록과 단어장이 삭제됩니다.\n정말 초기화할까요?'))return;
+  logs=[];words=[];sentences=[];save();saveSents();renderLogs();renderSents();closeSettings();
+  toast('데이터가 초기화됐어요');
+}
+
+// 탭
+function sw(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+  document.getElementById('sec-'+name).classList.add('on');
+  if(name==='stats')renderStats();
+  if(name==='streak')renderStreak();
+}
+
+// 기록
+let viewYear=new Date().getFullYear();
+let viewMonth=new Date().getMonth();
+function changeMonth(dir){
+  viewMonth+=dir;
+  if(viewMonth>11){viewMonth=0;viewYear++;}
+  if(viewMonth<0){viewMonth=11;viewYear--;}
+  logPage=0;renderLogs();
+}
+let logPage=0;
+
+function addLog(){
+  const cat=document.getElementById('cat').value;
+  const title=document.getElementById('ltitle').value.trim();
+  const min=parseInt(document.getElementById('lmin').value)||0;
+  const memo=document.getElementById('lmemo').value.trim();
+  if(!title||!min){toast('내용과 시간을 입력해주세요');return;}
+  logs.unshift({id:Date.now(),cat,title,min,memo,date:today()});
+  save();
+  viewYear=new Date().getFullYear(); viewMonth=new Date().getMonth();
+  logPage=0;
+  renderLogs();
+  ['ltitle','lmin','lmemo'].forEach(id=>document.getElementById(id).value='');
+  toast('기록됐어요!');
+}
+function delLog(id){logs=logs.filter(l=>l.id!==id);save();renderLogs();}
+
+function toggleDay(dateKey){
+  const body=document.getElementById('day-body-'+dateKey);
+  const arrow=document.getElementById('day-arrow-'+dateKey);
+  const isOpen=body.style.display!=='none';
+  body.style.display=isOpen?'none':'block';
+  arrow.textContent=isOpen?'›':'⌄';
+}
+
+function renderLogs(){
+  const WEEKDAYS=['일','월','화','수','목','금','토'];
+  const now=new Date();
+  document.getElementById('monthLabel').textContent=`${viewYear}년 ${viewMonth+1}월`;
+  const nextBtn=document.getElementById('monthNext');
+  nextBtn.style.color=(viewYear>now.getFullYear()||(viewYear===now.getFullYear()&&viewMonth>=now.getMonth()))?'var(--g200)':'var(--g400)';
+  nextBtn.disabled=(viewYear>now.getFullYear()||(viewYear===now.getFullYear()&&viewMonth>=now.getMonth()));
+
+  const prefix=`${viewYear}-${String(viewMonth+1).padStart(2,'0')}`;
+  const monthLogs=logs.filter(l=>l.date.startsWith(prefix));
+  const el=document.getElementById('logList');
+
+  if(!monthLogs.length){
+    el.innerHTML='<div class="empty"><div class="ei">✏️</div>이 달의 기록이 없어요</div>';
+    return;
+  }
+
+  // 날짜별 그룹
+  const grouped={};
+  monthLogs.forEach(l=>{
+    if(!grouped[l.date])grouped[l.date]=[];
+    grouped[l.date].push(l);
+  });
+  const sortedDates=Object.keys(grouped).sort((a,b)=>b.localeCompare(a));
+
+  // 페이지네이션 (7일 단위)
+  const PAGE_SIZE=7;
+  const totalPages=Math.ceil(sortedDates.length/PAGE_SIZE);
+  if(logPage>=totalPages)logPage=0;
+  const pageDates=sortedDates.slice(logPage*PAGE_SIZE,(logPage+1)*PAGE_SIZE);
+  const todayStr=today();
+
+  const cardsHTML=pageDates.map(date=>{
+    const d=new Date(date+'T00:00:00');
+    const dow=WEEKDAYS[d.getDay()];
+    const dayLabel=`${viewMonth+1}월 ${d.getDate()}일 ${dow}요일`;
+    const totalMin=grouped[date].reduce((s,l)=>s+l.min,0);
+    const isToday=date===todayStr;
+    const safeKey=date.replace(/-/g,'');
+    const items=grouped[date].map(l=>`
+      <div class="log-item">
+        <div class="log-dot ${l.cat==='lang'?'dot-lang':l.cat==='bible'?'dot-bible':'dot-book'}">${l.cat==='lang'?'🗣':l.cat==='bible'?'✝️':'📚'}</div>
+        <div class="log-body">
+          <div class="log-name">${l.title}</div>
+          <div class="log-sub">${l.memo?l.memo+' · ':''}<span class="badge badge-${l.cat}">${l.cat==='lang'?'언어':l.cat==='bible'?'성경':'독서'}</span></div>
+        </div>
+        <div class="log-right">
+          <div class="log-min">${l.min}분</div>
+        </div>
+        <button class="del" onclick="delLog(${l.id})">×</button>
+      </div>`).join('');
+    return `
+      <div class="card" style="margin-bottom:8px;padding:0;overflow:hidden">
+        <div onclick="toggleDay('${safeKey}')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;user-select:none">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span id="day-arrow-${safeKey}" style="font-size:14px;color:var(--g400);line-height:1;transition:transform .15s">${isToday?'⌄':'›'}</span>
+            <span style="font-size:12px;font-weight:600;color:${isToday?'var(--primary)':'var(--g900)'}">${dayLabel}${isToday?' <span style="font-size:10px;background:var(--primary);color:#fff;padding:1px 6px;border-radius:10px;margin-left:4px">오늘</span>':''}</span>
+          </div>
+          <span style="font-size:11px;color:var(--primary);font-weight:500">${totalMin}분</span>
+        </div>
+        <div id="day-body-${safeKey}" style="display:${isToday?'block':'none'};padding:0 14px 12px;border-top:1px solid var(--g100)">
+          ${items}
+        </div>
+      </div>`;
+  }).join('');
+
+  // 페이지 버튼
+  let pageNav='';
+  if(totalPages>1){
+    const btns=Array.from({length:totalPages},(_,i)=>`
+      <button onclick="goLogPage(${i})" style="width:28px;height:28px;border-radius:50%;border:1px solid ${i===logPage?'var(--primary)':'var(--g200)'};background:${i===logPage?'var(--primary)':'#fff'};color:${i===logPage?'#fff':'var(--g400)'};font-family:'Pretendard',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s">${i+1}</button>`).join('');
+    pageNav=`<div style="display:flex;justify-content:center;gap:6px;margin-top:12px">${btns}</div>`;
+  }
+
+  el.innerHTML=cardsHTML+pageNav;
+}
+
+function goLogPage(p){
+  logPage=p;
+  renderLogs();
+  document.getElementById('logList').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// 통계
+function renderStats(){
+  const total=logs.reduce((s,l)=>s+l.min,0);
+  const lang=logs.filter(l=>l.cat==='lang').reduce((s,l)=>s+l.min,0);
+  const book=logs.filter(l=>l.cat==='book').reduce((s,l)=>s+l.min,0);
+  const bible=logs.filter(l=>l.cat==='bible').reduce((s,l)=>s+l.min,0);
+  const uDays=new Set(logs.map(l=>l.date)).size;
+  document.getElementById('statGrid').innerHTML=`
+    <div class="stat-box total-box"><div class="stat-lbl">총 학습 시간</div><div class="stat-val">${Math.round(total/60*10)/10}<span class="stat-unit">h</span></div></div>
+    <div class="stat-box days-box"><div class="stat-lbl">학습한 날</div><div class="stat-val">${uDays}<span class="stat-unit">일</span></div></div>
+    <div class="stat-box lang-box"><div class="stat-lbl">언어 공부</div><div class="stat-val">${lang}<span class="stat-unit">분</span></div></div>
+    <div class="stat-box book-box"><div class="stat-lbl">독서</div><div class="stat-val">${book}<span class="stat-unit">분</span></div></div>
+    ${bible?`<div class="stat-box" style="background:#f0ede8;grid-column:1/-1"><div class="stat-lbl">성경 읽기</div><div class="stat-val" style="color:#6b5344">${bible}<span class="stat-unit">분</span></div></div>`:''}`;
+  const d14=[],l14=[];
+  const localDate=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  for(let i=13;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const ds=localDate(d);
+    d14.push(ds.slice(5));
+    l14.push(logs.filter(l=>l.date===ds).reduce((s,l)=>s+l.min,0));
+  }
+  const pc=getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+  if(dc)dc.destroy();
+  dc=new Chart(document.getElementById('dailyC'),{type:'bar',data:{labels:d14,datasets:[{label:'분',data:l14,backgroundColor:pc,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},autoSkip:true,maxRotation:45}},y:{ticks:{font:{size:10}},beginAtZero:true}}}});
+  if(cc)cc.destroy();
+  const nd=!lang&&!book&&!bible;
+  cc=new Chart(document.getElementById('catC'),{type:'doughnut',data:{labels:['언어','독서','성경'],datasets:[{data:nd?[1,1,1]:[lang||0.01,book||0.01,bible||0.01],backgroundColor:[pc,'#ba7517','#a0856e'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'70%'}});
+  const tot=lang+book+bible||1;
+  document.getElementById('catLeg').innerHTML=`
+    <div style="margin-bottom:6px;display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:${pc};display:inline-block;flex-shrink:0"></span>언어 <strong style="margin-left:auto">${lang}분</strong> <span style="color:var(--g400)">${Math.round(lang/tot*100)}%</span></div>
+    <div style="margin-bottom:6px;display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:#ba7517;display:inline-block;flex-shrink:0"></span>독서 <strong style="margin-left:auto">${book}분</strong> <span style="color:var(--g400)">${Math.round(book/tot*100)}%</span></div>
+    <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:#a0856e;display:inline-block;flex-shrink:0"></span>성경 <strong style="margin-left:auto">${bible}분</strong> <span style="color:var(--g400)">${Math.round(bible/tot*100)}%</span></div>`;
+}
+
+// 스트릭
+function renderStreak(){
+  const now=new Date();
+  const td=today();
+
+  // 학습 데이터 맵 {date: {min, lang, book}}
+  const logMap={};
+  logs.forEach(l=>{
+    if(!logMap[l.date])logMap[l.date]={min:0,lang:false,book:false,bible:false};
+    logMap[l.date].min+=l.min;
+    logMap[l.date][l.cat]=true;
+  });
+
+  // 최대 학습 분 (링 비율 계산용)
+  const allMins=Object.values(logMap).map(v=>v.min);
+  const maxMin=Math.max(...allMins,60);
+
+  const pc=getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+
+  function makeRingHTML(dateStr){
+    const d=new Date(dateStr+'T00:00:00');
+    const dayNum=d.getDate();
+    const m=logMap[dateStr];
+    const isToday=dateStr===td;
+    const isFuture=dateStr>td;
+    const r=12, circ=2*Math.PI*r;
+
+    let ringColor=pc;
+    let ratio=0;
+    let numText='';
+
+    if(m&&!isFuture){
+      ratio=Math.min(m.min/maxMin,1);
+      if(ratio<0.08)ratio=0.08;
+      numText=m.min>=60?`${Math.round(m.min/60)}h`:m.min+'';
+      if(m.lang&&m.book&&m.bible)ringColor='#1d9e75';
+      else if(m.lang&&m.book)ringColor='#1d9e75';
+      else if(m.lang&&m.bible)ringColor='#1d9e75';
+      else if(m.book&&m.bible)ringColor='#8a6a56';
+      else if(m.bible)ringColor='#a0856e';
+      else if(m.book)ringColor='#ba7517';
+      else ringColor=pc;
+    }
+
+    const dash=ratio*circ;
+    const gap=circ-dash;
+    const trackColor=isFuture?'#ebebeb':'var(--g100)';
+    const numColor=m?ringColor:'var(--g200)';
+
+    return `
+      <div class="ring-cell">
+        <div class="ring-wrap${isToday?' today-ring':''}" style="width:32px;height:32px">
+          <svg width="32" height="32" viewBox="0 0 32 32">
+            <circle class="track" cx="16" cy="16" r="${r}" fill="none" stroke="${trackColor}" stroke-width="3"/>
+            ${m&&!isFuture?`<circle cx="16" cy="16" r="${r}" fill="none" stroke="${ringColor}" stroke-width="3"
+              stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}"
+              stroke-linecap="round" transform="rotate(-90 16 16)"/>`:''}
+          </svg>
+          <div class="ring-num" style="color:${numColor}">${numText||dayNum}</div>
+        </div>
+      </div>`;
+  }
+
+  function renderMonth(year,month){
+    const DAYS=['일','월','화','수','목','금','토'];
+    const label=`${year}년 ${month+1}월`;
+    const firstDay=new Date(year,month,1).getDay();
+    const lastDate=new Date(year,month+1,0).getDate();
+
+    let html=`<div class="month-label">${label}</div>`;
+    html+=`<div class="ring-row-labels">${DAYS.map(d=>`<div class="ring-row-lbl">${d}</div>`).join('')}</div>`;
+    html+='<div class="ring-grid">';
+    for(let i=0;i<firstDay;i++)html+=`<div></div>`;
+    for(let d=1;d<=lastDate;d++){
+      const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      html+=makeRingHTML(ds);
+    }
+    html+='</div>';
+    return html;
+  }
+
+  const prevMonth=now.getMonth()===0?11:now.getMonth()-1;
+  const prevYear=now.getMonth()===0?now.getFullYear()-1:now.getFullYear();
+  document.getElementById('ringCal').innerHTML=
+    renderMonth(prevYear,prevMonth)+
+    renderMonth(now.getFullYear(),now.getMonth());
+
+  // 스트릭 계산
+  const allDates=[...new Set(logs.map(l=>l.date))].sort();
+  let streak=0;
+  if(logMap[td]){
+    let s=1;const sd=new Date(td);
+    while(true){sd.setDate(sd.getDate()-1);const dstr=`${sd.getFullYear()}-${String(sd.getMonth()+1).padStart(2,'0')}-${String(sd.getDate()).padStart(2,'0')}`;if(logMap[dstr])s++;else break;}
+    streak=s;
+  }
+  document.getElementById('curS').textContent=streak;
+  document.getElementById('totD').textContent=allDates.length;
+}
+
+// 문장 수집
+let sentences = JSON.parse(localStorage.getItem('sl2-sents')||'[]');
+const saveSents = () => localStorage.setItem('sl2-sents', JSON.stringify(sentences));
+
+function addSent(){
+  const text = document.getElementById('sent-text').value.trim();
+  const src  = document.getElementById('sent-src').value.trim();
+  const cat  = document.getElementById('sent-cat').value;
+  if(!text){toast('문장을 입력해주세요');return;}
+  sentences.unshift({id:Date.now(), text, src, cat, date:today()});
+  saveSents(); renderSents();
+  document.getElementById('sent-text').value='';
+  document.getElementById('sent-src').value='';
+  toast('문장이 저장됐어요!');
+}
+function delSent(id){sentences=sentences.filter(s=>s.id!==id);saveSents();renderSents();}
+
+function renderSents(){
+  // 오늘의 문장 — 가장 최근 등록 순으로 표시
+  const todayEl = document.getElementById('todaySent');
+  if(sentences.length){
+    const pick = sentences[0];
+    todayEl.innerHTML=`
+      <div class="today-sent">
+        <div class="today-sent-label">✦ 오늘의 문장</div>
+        <div class="today-sent-text">${pick.text}</div>
+        ${pick.src?`<div class="today-sent-src">— ${pick.src}</div>`:''}
+      </div>`;
+  } else {
+    todayEl.innerHTML='';
+  }
+
+  const el = document.getElementById('sentList');
+  if(!sentences.length){
+    el.innerHTML='<div class="empty"><div class="ei">✍️</div>마음에 남은 문장을 기록해보세요</div>';
+    return;
+  }
+  el.innerHTML = sentences.map(s=>`
+    <div class="sent-card">
+      <button class="sent-del" onclick="delSent(${s.id})">×</button>
+      <div class="sent-quote">${s.text}</div>
+      <div class="sent-meta">
+        ${s.src?`<span class="sent-source">${s.src}</span>`:''}
+        <span class="sent-tag ${s.cat}">${s.cat==='lang'?'🗣 언어':s.cat==='bible'?'✝️ 성경':'📚 독서'}</span>
+        <span class="sent-date">${s.date}</span>
+      </div>
+    </div>`).join('');
+}
+
+renderLogs(); renderSents();
+</script>
+</body>
+</html>
