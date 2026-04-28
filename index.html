@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>underline.</title>
+<title>underline. — 배움을 기록하다</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
 <style>
@@ -814,8 +814,11 @@ function renderStats(){
     color: CAT_COLORS[categories.indexOf(c)%CAT_COLORS.length]
   }));
 
+  const totalH = Math.floor(total/60);
+  const totalM = total%60;
+  const totalStr = totalH>0 ? `${totalH}시간 ${totalM}분` : `${totalM}분`;
   document.getElementById('statGrid').innerHTML=`
-    <div class="stat-box total-box"><div class="stat-lbl">총 학습 시간</div><div class="stat-val">${Math.round(total/60*10)/10}<span class="stat-unit">h</span></div></div>
+    <div class="stat-box total-box"><div class="stat-lbl">총 학습 시간</div><div class="stat-val" style="font-size:18px;color:var(--t600)">${totalStr}</div></div>
     <div class="stat-box days-box"><div class="stat-lbl">학습한 날</div><div class="stat-val">${uDays}<span class="stat-unit">일</span></div></div>
     ${catMins.filter(c=>c.min>0).map(c=>`
     <div class="stat-box" style="background:${c.color}18"><div class="stat-lbl">${c.emoji} ${c.name}</div><div class="stat-val" style="color:${c.color}">${c.min}<span class="stat-unit">분</span></div></div>`).join('')}`;
