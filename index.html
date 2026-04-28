@@ -222,7 +222,7 @@ html,body{background:var(--g50);font-family:'Pretendard',-apple-system,sans-seri
 <div class="sec" id="sec-words">
   <div id="todaySent"></div>
   <div class="card">
-    <div class="card-title">문장 추가</div>
+    <div class="card-title">노트 추가</div>
     <div class="fg" style="margin-bottom:8px">
       <label>문장</label>
       <textarea id="sent-text" rows="3" placeholder="마음에 남은 문장을 기록해보세요" style="font-family:'Pretendard',sans-serif;font-size:13px;padding:8px 10px;border:1px solid var(--g200);border-radius:8px;background:var(--g50);color:var(--g900);outline:none;resize:none;line-height:1.8;width:100%;transition:border-color .15s"></textarea>
@@ -239,7 +239,12 @@ html,body{background:var(--g50);font-family:'Pretendard',-apple-system,sans-seri
     </div>
     <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="addSent()">+ 추가</button>
   </div>
-  <div class="sent-list" id="sentList"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px">
+    <button onclick="changeSentMonth(-1)" style="background:none;border:none;cursor:pointer;padding:4px 10px;font-size:20px;color:var(--g400);line-height:1">‹</button>
+    <div id="sentMonthLabel" style="font-size:13px;font-weight:600;color:var(--g900)"></div>
+    <button onclick="changeSentMonth(1)" id="sentMonthNext" style="background:none;border:none;cursor:pointer;padding:4px 10px;font-size:20px;color:var(--g400);line-height:1">›</button>
+  </div>
+  <div id="sentList"></div>
 </div>
 
 </div>
@@ -680,6 +685,11 @@ function sw(name,el){
     streakMonth=new Date().getMonth();
     renderStreak();
   }
+  if(name==='words'){
+    sentYear=new Date().getFullYear();
+    sentMonth=new Date().getMonth();
+    renderSents();
+  }
 }
 
 // 기록
@@ -954,9 +964,19 @@ function renderStreak(){
   document.getElementById('totD').textContent=allDates.length;
 }
 
-// 문장 수집
+// 노트
 let sentences = JSON.parse(localStorage.getItem('sl2-sents')||'[]');
 const saveSents = () => localStorage.setItem('sl2-sents', JSON.stringify(sentences));
+
+let sentYear = new Date().getFullYear();
+let sentMonth = new Date().getMonth();
+
+function changeSentMonth(dir){
+  sentMonth += dir;
+  if(sentMonth>11){sentMonth=0;sentYear++;}
+  if(sentMonth<0){sentMonth=11;sentYear--;}
+  renderSents();
+}
 
 function addSent(){
   const text = document.getElementById('sent-text').value.trim();
@@ -964,43 +984,93 @@ function addSent(){
   const cat  = document.getElementById('sent-cat').value;
   if(!text){toast('문장을 입력해주세요');return;}
   sentences.unshift({id:Date.now(), text, src, cat, date:today()});
-  saveSents(); renderSents();
+  saveSents();
+  sentYear=new Date().getFullYear(); sentMonth=new Date().getMonth();
+  renderSents();
   document.getElementById('sent-text').value='';
   document.getElementById('sent-src').value='';
-  toast('문장이 저장됐어요!');
+  toast('노트가 저장됐어요!');
 }
 function delSent(id){sentences=sentences.filter(s=>s.id!==id);saveSents();renderSents();}
 
 function renderSents(){
-  // 오늘의 문장 — 가장 최근 등록 순으로 표시
-  const todayEl = document.getElementById('todaySent');
+  const WEEKDAYS=['일','월','화','수','목','금','토'];
+  const now=new Date();
+
+  // 오늘의 문장
+  const todayEl=document.getElementById('todaySent');
   if(sentences.length){
-    const pick = sentences[0];
+    const pick=sentences[0];
     todayEl.innerHTML=`
       <div class="today-sent">
-        <div class="today-sent-label">✦ 오늘의 문장</div>
+        <div class="today-sent-label">✦ 최근 노트</div>
         <div class="today-sent-text">${pick.text}</div>
         ${pick.src?`<div class="today-sent-src">— ${pick.src}</div>`:''}
       </div>`;
-  } else {
-    todayEl.innerHTML='';
-  }
+  } else { todayEl.innerHTML=''; }
 
-  const el = document.getElementById('sentList');
-  if(!sentences.length){
-    el.innerHTML='<div class="empty"><div class="ei">✍️</div>마음에 남은 문장을 기록해보세요</div>';
+  // 월 네비게이터
+  document.getElementById('sentMonthLabel').textContent=`${sentYear}년 ${sentMonth+1}월`;
+  const nextBtn=document.getElementById('sentMonthNext');
+  const isCurrent=sentYear>now.getFullYear()||(sentYear===now.getFullYear()&&sentMonth>=now.getMonth());
+  nextBtn.style.color=isCurrent?'var(--g200)':'var(--g400)';
+  nextBtn.disabled=isCurrent;
+
+  const prefix=`${sentYear}-${String(sentMonth+1).padStart(2,'0')}`;
+  const monthSents=sentences.filter(s=>s.date&&s.date.startsWith(prefix));
+  const el=document.getElementById('sentList');
+
+  if(!monthSents.length){
+    el.innerHTML='<div class="empty"><div class="ei">✍️</div>이 달의 노트가 없어요</div>';
     return;
   }
-  el.innerHTML = sentences.map(s=>`
-    <div class="sent-card">
-      <button class="sent-del" onclick="delSent(${s.id})">×</button>
-      <div class="sent-quote">${s.text}</div>
-      <div class="sent-meta">
-        ${s.src?`<span class="sent-source">${s.src}</span>`:''}
-        <span class="sent-tag" style="background:var(--primary-light);color:var(--primary-dark)">${getCat(s.cat).emoji} ${getCat(s.cat).name}</span>
-        <span class="sent-date">${s.date}</span>
-      </div>
-    </div>`).join('');
+
+  // 날짜별 그룹
+  const grouped={};
+  monthSents.forEach(s=>{
+    if(!grouped[s.date])grouped[s.date]=[];
+    grouped[s.date].push(s);
+  });
+  const sortedDates=Object.keys(grouped).sort((a,b)=>b.localeCompare(a));
+  const todayStr=today();
+
+  el.innerHTML=sortedDates.map(date=>{
+    const d=new Date(date+'T00:00:00');
+    const dow=WEEKDAYS[d.getDay()];
+    const isToday=date===todayStr;
+    const dayLabel=`${sentMonth+1}월 ${d.getDate()}일 ${dow}요일`;
+    const safeKey=date.replace(/-/g,'');
+    const items=grouped[date].map(s=>`
+      <div class="sent-card" style="border:none;border-bottom:1px solid var(--g100);border-radius:0;padding:12px 0;margin:0">
+        <button class="sent-del" onclick="delSent(${s.id})">×</button>
+        <div class="sent-quote">${s.text}</div>
+        <div class="sent-meta">
+          ${s.src?`<span class="sent-source">${s.src}</span>`:''}
+          <span class="sent-tag" style="background:var(--primary-light);color:var(--primary-dark)">${getCat(s.cat).emoji} ${getCat(s.cat).name}</span>
+        </div>
+      </div>`).join('');
+    return `
+      <div class="card" style="margin-bottom:8px;padding:0;overflow:hidden">
+        <div onclick="toggleSentDay('${safeKey}')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;user-select:none">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span id="sent-arrow-${safeKey}" style="font-size:14px;color:var(--g400);line-height:1">${isToday?'⌄':'›'}</span>
+            <span style="font-size:12px;font-weight:600;color:${isToday?'var(--primary)':'var(--g900)'}">${dayLabel}${isToday?' <span style="font-size:10px;background:var(--primary);color:#fff;padding:1px 6px;border-radius:10px;margin-left:4px">오늘</span>':''}</span>
+          </div>
+          <span style="font-size:11px;color:var(--g400)">${grouped[date].length}개</span>
+        </div>
+        <div id="sent-body-${safeKey}" style="display:${isToday?'block':'none'};padding:0 14px 12px;border-top:1px solid var(--g100)">
+          ${items}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleSentDay(key){
+  const body=document.getElementById('sent-body-'+key);
+  const arrow=document.getElementById('sent-arrow-'+key);
+  const isOpen=body.style.display!=='none';
+  body.style.display=isOpen?'none':'block';
+  arrow.textContent=isOpen?'›':'⌄';
 }
 
 renderCatSelects(); renderLogs(); renderSents();
