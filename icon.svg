@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#534ab7"/>
+  <!-- 왼쪽 페이지 -->
+  <rect x="106" y="140" width="142" height="188" rx="6" fill="#fff" opacity="0.95"/>
+  <!-- 왼쪽 텍스트 줄 -->
+  <rect x="124" y="174" width="106" height="12" rx="4" fill="#c8c6e8"/>
+  <rect x="124" y="198" width="106" height="12" rx="4" fill="#c8c6e8"/>
+  <rect x="124" y="222" width="80" height="12" rx="4" fill="#c8c6e8"/>
+  <!-- 왼쪽 밑줄 강조 -->
+  <rect x="124" y="246" width="98" height="14" rx="4" fill="#534ab7"/>
+  <!-- 오른쪽 페이지 -->
+  <rect x="264" y="140" width="142" height="188" rx="6" fill="#fff" opacity="0.95"/>
+  <!-- 오른쪽 텍스트 줄 -->
+  <rect x="282" y="174" width="106" height="12" rx="4" fill="#c8c6e8"/>
+  <rect x="282" y="198" width="88" height="12" rx="4" fill="#c8c6e8"/>
+  <rect x="282" y="222" width="100" height="12" rx="4" fill="#c8c6e8"/>
+  <!-- 오른쪽 밑줄 강조 -->
+  <rect x="282" y="246" width="84" height="14" rx="4" fill="#534ab7"/>
+  <!-- 바인딩 -->
+  <rect x="248" y="140" width="16" height="188" rx="0" fill="#3c3489" opacity="0.5"/>
+  <!-- 펜 (오른쪽 하단에 비스듬히) -->
+  <g transform="translate(340, 290) rotate(-40)">
+    <rect x="-8" y="-60" width="16" height="64" rx="5" fill="#fff"/>
+    <polygon points="-8,4 8,4 0,22" fill="#eeedfe"/>
+    <rect x="-8" y="-60" width="16" height="12" rx="4" fill="#eeedfe" opacity="0.7"/>
+  </g>
+</svg>
