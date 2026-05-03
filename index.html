@@ -9,7 +9,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="underline.">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
 <style>
@@ -497,7 +498,7 @@ function obFinish(){
 obInit();
 
 // ── Google Drive ──────────────────────────────────────
-const CLIENT_ID = '150311410542-ds3rjmalk45fdmf68bdaqmgbaiajo6qo.apps.googleusercontent.com'; // ← 여기에 클라이언트 ID 입력
+const CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID'; // ← 여기에 클라이언트 ID 입력
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
 const FILE_NAME = 'studylog-data.json';
 let driveToken = null;
