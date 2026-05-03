@@ -186,7 +186,7 @@ html,body{background:var(--g50);font-family:'Pretendard',-apple-system,sans-seri
           </svg>
         </div>
         <div class="ob-label">UNDERLINE.</div>
-        <div class="ob-title">밑줄 친 것들이<br>나를 만든다</div>
+        <div class="ob-title">밑줄이 쌓여<br>나를 만든다</div>
         <div class="ob-desc">책 읽다 마음에 남은 문장,<br>오늘 배운 것들, 공부한 시간—<br>흩어지던 배움을 한 곳에 모아요</div>
       </div>
 
@@ -308,10 +308,16 @@ html,body{background:var(--g50);font-family:'Pretendard',-apple-system,sans-seri
 </div>
 
 <div class="sec" id="sec-stats">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 12px">
+    <button onclick="changeStatsMonth(-1)" style="background:none;border:none;cursor:pointer;padding:4px 10px;font-size:20px;color:var(--g400);line-height:1">‹</button>
+    <div id="statsMonthLabel" style="font-size:13px;font-weight:600;color:var(--g900)"></div>
+    <button onclick="changeStatsMonth(1)" id="statsMonthNext" style="background:none;border:none;cursor:pointer;padding:4px 10px;font-size:20px;color:var(--g400);line-height:1">›</button>
+  </div>
+  <div id="statsMomComp" class="card" style="margin-bottom:12px;display:none"></div>
   <div class="stat-grid" id="statGrid"></div>
   <div class="card" style="margin-bottom:12px">
-    <div class="card-title">최근 14일 학습 시간 (분)</div>
-    <div class="chart-wrap" style="height:200px"><canvas id="dailyC" role="img" aria-label="최근 14일 일별 학습 시간">학습 시간 데이터</canvas></div>
+    <div class="card-title" id="dailyChartTitle">이번 달 일별 학습 시간 (분)</div>
+    <div class="chart-wrap" style="height:200px"><canvas id="dailyC" role="img" aria-label="월별 일별 학습 시간">학습 시간 데이터</canvas></div>
   </div>
   <div class="card">
     <div class="card-title">카테고리 비중</div>
@@ -831,7 +837,11 @@ function sw(name,el){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
   document.getElementById('sec-'+name).classList.add('on');
-  if(name==='stats')renderStats();
+  if(name==='stats'){
+    statsYear=new Date().getFullYear();
+    statsMonth=new Date().getMonth();
+    renderStats();
+  }
   if(name==='streak'){
     streakYear=new Date().getFullYear();
     streakMonth=new Date().getMonth();
@@ -963,50 +973,96 @@ function goLogPage(p){
 }
 
 // 통계
+// 통계 월 네비게이터
+let statsYear = new Date().getFullYear();
+let statsMonth = new Date().getMonth();
+
+function changeStatsMonth(dir){
+  statsMonth += dir;
+  if(statsMonth>11){statsMonth=0;statsYear++;}
+  if(statsMonth<0){statsMonth=11;statsYear--;}
+  renderStats();
+}
+
 function renderStats(){
-  const total=logs.reduce((s,l)=>s+l.min,0);
-  const uDays=new Set(logs.map(l=>l.date)).size;
-  const pc=getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+  const now = new Date();
+  const CAT_COLORS=['#534ab7','#ba7517','#1d9e75','#993c1d','#185fa5','#6b7040','#9a7a5f','#d94f4f'];
+  const pc = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+  const localDate = d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+  // 월 라벨
+  document.getElementById('statsMonthLabel').textContent=`${statsYear}년 ${statsMonth+1}월`;
+  const nextBtn=document.getElementById('statsMonthNext');
+  const isCurrent=statsYear>now.getFullYear()||(statsYear===now.getFullYear()&&statsMonth>=now.getMonth());
+  nextBtn.style.color=isCurrent?'var(--g200)':'var(--g400)';
+  nextBtn.disabled=isCurrent;
+
+  const prefix=`${statsYear}-${String(statsMonth+1).padStart(2,'0')}`;
+  const monthLogs=logs.filter(l=>l.date.startsWith(prefix));
+
+  // 전월 데이터
+  let prevMonth=statsMonth-1, prevYear=statsYear;
+  if(prevMonth<0){prevMonth=11;prevYear--;}
+  const prevPrefix=`${prevYear}-${String(prevMonth+1).padStart(2,'0')}`;
+  const prevLogs=logs.filter(l=>l.date.startsWith(prevPrefix));
+  const prevTotal=prevLogs.reduce((s,l)=>s+l.min,0);
+
+  const total=monthLogs.reduce((s,l)=>s+l.min,0);
+  const uDays=new Set(monthLogs.map(l=>l.date)).size;
+  const totalH=Math.floor(total/60), totalM=total%60;
+  const totalStr=totalH>0?`${totalH}시간 ${totalM}분`:`${totalM}분`;
+
+  // 전월 대비
+  const compEl=document.getElementById('statsMomComp');
+  if(prevTotal>0){
+    const diff=total-prevTotal;
+    const diffH=Math.floor(Math.abs(diff)/60), diffM=Math.abs(diff)%60;
+    const diffStr=diffH>0?`${diffH}시간 ${diffM}분`:`${diffM}분`;
+    const isUp=diff>=0;
+    compEl.style.display='block';
+    compEl.innerHTML=`<div style="display:flex;align-items:center;gap:8px;font-size:13px">
+      <span style="font-size:18px">${isUp?'📈':'📉'}</span>
+      <span style="color:var(--g700)">전월 대비 <strong style="color:${isUp?'var(--t600)':'#d94f4f'}">${isUp?'+':'−'}${diffStr}</strong> ${isUp?'더 공부했어요':'덜 공부했어요'}</span>
+    </div>`;
+  } else { compEl.style.display='none'; }
 
   // 카테고리별 집계
-  const CAT_COLORS=['#534ab7','#ba7517','#1d9e75','#993c1d','#185fa5','#6b7040','#9a7a5f','#d94f4f'];
-  const catMins = categories.map(c=>({
+  const catMins=categories.map(c=>({
     ...c,
-    min: logs.filter(l=>l.cat===c.id).reduce((s,l)=>s+l.min,0),
-    color: CAT_COLORS[categories.indexOf(c)%CAT_COLORS.length]
+    min:monthLogs.filter(l=>l.cat===c.id).reduce((s,l)=>s+l.min,0),
+    color:CAT_COLORS[categories.indexOf(c)%CAT_COLORS.length]
   }));
 
-  const totalH = Math.floor(total/60);
-  const totalM = total%60;
-  const totalStr = totalH>0 ? `${totalH}시간 ${totalM}분` : `${totalM}분`;
   document.getElementById('statGrid').innerHTML=`
-    <div class="stat-box total-box"><div class="stat-lbl">총 학습 시간</div><div class="stat-val" style="font-size:18px;color:var(--t600)">${totalStr}</div></div>
+    <div class="stat-box total-box"><div class="stat-lbl">총 학습 시간</div><div class="stat-val" style="font-size:18px;color:var(--t600)">${totalStr||'0분'}</div></div>
     <div class="stat-box days-box"><div class="stat-lbl">학습한 날</div><div class="stat-val">${uDays}<span class="stat-unit">일</span></div></div>
     ${catMins.filter(c=>c.min>0).map(c=>`
     <div class="stat-box" style="background:${c.color}18"><div class="stat-lbl">${c.emoji} ${c.name}</div><div class="stat-val" style="color:${c.color}">${c.min}<span class="stat-unit">분</span></div></div>`).join('')}`;
 
-  const d14=[],l14=[];
-  const localDate=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  for(let i=13;i>=0;i--){
-    const d=new Date();d.setDate(d.getDate()-i);
-    const ds=localDate(d);
-    d14.push(ds.slice(5));
-    l14.push(logs.filter(l=>l.date===ds).reduce((s,l)=>s+l.min,0));
+  // 월 전체 일별 차트
+  const lastDate=new Date(statsYear,statsMonth+1,0).getDate();
+  const dAll=[],lAll=[];
+  for(let d=1;d<=lastDate;d++){
+    const ds=`${prefix}-${String(d).padStart(2,'0')}`;
+    dAll.push(String(d));
+    lAll.push(monthLogs.filter(l=>l.date===ds).reduce((s,l)=>s+l.min,0));
   }
+  document.getElementById('dailyChartTitle').textContent=`${statsMonth+1}월 일별 학습 시간 (분)`;
   if(dc)dc.destroy();
-  dc=new Chart(document.getElementById('dailyC'),{type:'bar',data:{labels:d14,datasets:[{label:'분',data:l14,backgroundColor:pc,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},autoSkip:true,maxRotation:45}},y:{ticks:{font:{size:10}},beginAtZero:true}}}});
+  dc=new Chart(document.getElementById('dailyC'),{
+    type:'bar',
+    data:{labels:dAll,datasets:[{label:'분',data:lAll,backgroundColor:pc,borderRadius:4,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},autoSkip:true,maxRotation:0}},y:{ticks:{font:{size:10}},beginAtZero:true}}}
+  });
 
+  // 도넛 차트
   if(cc)cc.destroy();
-  const hasData = catMins.some(c=>c.min>0);
+  const hasData=catMins.some(c=>c.min>0);
   cc=new Chart(document.getElementById('catC'),{
     type:'doughnut',
     data:{
       labels:catMins.map(c=>c.name),
-      datasets:[{
-        data:hasData?catMins.map(c=>c.min||0.01):catMins.map(()=>1),
-        backgroundColor:catMins.map(c=>c.color),
-        borderWidth:0
-      }]
+      datasets:[{data:hasData?catMins.map(c=>c.min||0.01):catMins.map(()=>1),backgroundColor:catMins.map(c=>c.color),borderWidth:0}]
     },
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'70%'}
   });
