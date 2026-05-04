@@ -535,7 +535,7 @@ function obFinish(){
 obInit();
 
 // ── Google Drive ──────────────────────────────────────
-const CLIENT_ID = '150311410542-ds3rjmalk45fdmf68bdaqmgbaiajo6qo.apps.googleusercontent.com'; // ← 여기에 클라이언트 ID 입력
+const CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID'; // ← 여기에 클라이언트 ID 입력
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
 const FILE_NAME = 'studylog-data.json';
 let driveToken = null;
@@ -888,13 +888,31 @@ function sw(name,el){
 // 기록
 let viewYear=new Date().getFullYear();
 let viewMonth=new Date().getMonth();
+let logWeek=0;
+
 function changeMonth(dir){
   viewMonth+=dir;
   if(viewMonth>11){viewMonth=0;viewYear++;}
   if(viewMonth<0){viewMonth=11;viewYear--;}
-  logPage=0;renderLogs();
+  logWeek=0;
+  renderLogs();
 }
-let logPage=0;
+
+// 해당 월을 일요일 기준 주차로 분할
+function getLogWeeks(year, month){
+  const lastDate=new Date(year,month+1,0).getDate();
+  const weeks=[];
+  let start=1;
+  while(start<=lastDate){
+    const startDow=new Date(year,month,start).getDay();
+    // 해당 주 토요일까지 또는 월말까지
+    const daysUntilSat = startDow===0 ? 6 : 7-startDow;
+    const end=Math.min(start+daysUntilSat, lastDate);
+    weeks.push({start, end});
+    start=end+1;
+  }
+  return weeks;
+}
 
 function addLog(){
   const cat=document.getElementById('cat').value;
@@ -905,7 +923,11 @@ function addLog(){
   logs.unshift({id:Date.now(),cat,title,min,memo,date:today()});
   save();
   viewYear=new Date().getFullYear(); viewMonth=new Date().getMonth();
-  logPage=0;
+  // 현재 주차로 이동
+  const weeks=getLogWeeks(viewYear,viewMonth);
+  const todayDate=new Date().getDate();
+  logWeek=weeks.findIndex(w=>todayDate>=w.start&&todayDate<=w.end);
+  if(logWeek<0)logWeek=weeks.length-1;
   renderLogs();
   ['ltitle','lmin','lmemo'].forEach(id=>document.getElementById(id).value='');
   toast('기록됐어요!');
@@ -925,82 +947,104 @@ function renderLogs(){
   const now=new Date();
   document.getElementById('monthLabel').textContent=`${viewYear}년 ${viewMonth+1}월`;
   const nextBtn=document.getElementById('monthNext');
-  nextBtn.style.color=(viewYear>now.getFullYear()||(viewYear===now.getFullYear()&&viewMonth>=now.getMonth()))?'var(--g200)':'var(--g400)';
-  nextBtn.disabled=(viewYear>now.getFullYear()||(viewYear===now.getFullYear()&&viewMonth>=now.getMonth()));
+  const isCurrent=viewYear>now.getFullYear()||(viewYear===now.getFullYear()&&viewMonth>=now.getMonth());
+  nextBtn.style.color=isCurrent?'var(--g200)':'var(--g400)';
+  nextBtn.disabled=isCurrent;
 
   const prefix=`${viewYear}-${String(viewMonth+1).padStart(2,'0')}`;
   const monthLogs=logs.filter(l=>l.date.startsWith(prefix));
   const el=document.getElementById('logList');
 
-  if(!monthLogs.length){
-    el.innerHTML='<div class="empty"><div class="ei">✏️</div>이 달의 기록이 없어요</div>';
-    return;
+  // 주차 계산
+  const weeks=getLogWeeks(viewYear,viewMonth);
+
+  // 현재 달이면 현재 주차로 초기화 (처음 진입 시)
+  const todayStr=today();
+  if(viewYear===now.getFullYear()&&viewMonth===now.getMonth()&&logWeek===0){
+    const todayDate=now.getDate();
+    const idx=weeks.findIndex(w=>todayDate>=w.start&&todayDate<=w.end);
+    if(idx>=0)logWeek=idx;
+  }
+  if(logWeek>=weeks.length)logWeek=weeks.length-1;
+
+  const w=weeks[logWeek];
+  const wDates=[];
+  for(let d=w.start;d<=w.end;d++){
+    wDates.push(`${prefix}-${String(d).padStart(2,'0')}`);
   }
 
-  // 날짜별 그룹
+  // 날짜별 그룹 (해당 주차에 기록 있는 날짜만)
   const grouped={};
   monthLogs.forEach(l=>{
     if(!grouped[l.date])grouped[l.date]=[];
     grouped[l.date].push(l);
   });
-  const sortedDates=Object.keys(grouped).sort((a,b)=>b.localeCompare(a));
+  const weekDatesWithLogs=wDates.filter(d=>grouped[d]).reverse();
 
-  // 페이지네이션 (7일 단위)
-  const PAGE_SIZE=7;
-  const totalPages=Math.ceil(sortedDates.length/PAGE_SIZE);
-  if(logPage>=totalPages)logPage=0;
-  const pageDates=sortedDates.slice(logPage*PAGE_SIZE,(logPage+1)*PAGE_SIZE);
-  const todayStr=today();
-
-  const cardsHTML=pageDates.map(date=>{
-    const d=new Date(date+'T00:00:00');
-    const dow=WEEKDAYS[d.getDay()];
-    const dayLabel=`${viewMonth+1}월 ${d.getDate()}일 ${dow}요일`;
-    const totalMin=grouped[date].reduce((s,l)=>s+l.min,0);
-    const isToday=date===todayStr;
-    const safeKey=date.replace(/-/g,'');
-    const items=grouped[date].map(l=>`
-      <div class="log-item">
-        <div class="log-dot" style="background:${getCat(l.cat).emoji?'var(--primary-light)':'var(--g100)'}">${getCat(l.cat).emoji}</div>
-        <div class="log-body">
-          <div class="log-name">${l.title}</div>
-          <div class="log-sub">${l.memo?l.memo+' · ':''}<span class="badge" style="background:var(--primary-light);color:var(--primary-dark)">${getCat(l.cat).emoji} ${getCat(l.cat).name}</span></div>
-        </div>
-        <div class="log-right">
-          <div class="log-min">${l.min}분</div>
-        </div>
-        <button class="del" onclick="delLog(${l.id})">×</button>
-      </div>`).join('');
-    return `
-      <div class="card" style="margin-bottom:8px;padding:0;overflow:hidden">
-        <div onclick="toggleDay('${safeKey}')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;user-select:none">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span id="day-arrow-${safeKey}" style="font-size:14px;color:var(--g400);line-height:1;transition:transform .15s">${isToday?'⌄':'›'}</span>
-            <span style="font-size:12px;font-weight:600;color:${isToday?'var(--primary)':'var(--g900)'}">${dayLabel}${isToday?' <span style="font-size:10px;background:var(--primary);color:#fff;padding:1px 6px;border-radius:10px;margin-left:4px">오늘</span>':''}</span>
+  if(!monthLogs.length){
+    el.innerHTML='<div class="empty"><div class="ei">✏️</div>이 달의 기록이 없어요</div>';
+  } else if(!weekDatesWithLogs.length){
+    el.innerHTML='<div class="empty"><div class="ei">✏️</div>이 주의 기록이 없어요</div>';
+  } else {
+    el.innerHTML=weekDatesWithLogs.map(date=>{
+      const d=new Date(date+'T00:00:00');
+      const dow=WEEKDAYS[d.getDay()];
+      const dayLabel=`${viewMonth+1}월 ${d.getDate()}일 ${dow}요일`;
+      const totalMin=grouped[date].reduce((s,l)=>s+l.min,0);
+      const isToday=date===todayStr;
+      const safeKey=date.replace(/-/g,'');
+      const items=grouped[date].map(l=>`
+        <div class="log-item">
+          <div class="log-dot" style="background:var(--primary-light)">${getCat(l.cat).emoji}</div>
+          <div class="log-body">
+            <div class="log-name">${l.title}</div>
+            <div class="log-sub">${l.memo?l.memo+' · ':''}<span class="badge" style="background:var(--primary-light);color:var(--primary-dark)">${getCat(l.cat).emoji} ${getCat(l.cat).name}</span></div>
           </div>
-          <span style="font-size:11px;color:var(--primary);font-weight:500">${totalMin}분</span>
-        </div>
-        <div id="day-body-${safeKey}" style="display:${isToday?'block':'none'};padding:0 14px 12px;border-top:1px solid var(--g100)">
-          ${items}
-        </div>
-      </div>`;
-  }).join('');
-
-  // 페이지 버튼
-  let pageNav='';
-  if(totalPages>1){
-    const btns=Array.from({length:totalPages},(_,i)=>`
-      <button onclick="goLogPage(${i})" style="width:28px;height:28px;border-radius:50%;border:1px solid ${i===logPage?'var(--primary)':'var(--g200)'};background:${i===logPage?'var(--primary)':'#fff'};color:${i===logPage?'#fff':'var(--g400)'};font-family:'Pretendard',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s">${i+1}</button>`).join('');
-    pageNav=`<div style="display:flex;justify-content:center;gap:6px;margin-top:12px">${btns}</div>`;
+          <div class="log-right">
+            <div class="log-min">${l.min}분</div>
+          </div>
+          <button class="del" onclick="delLog(${l.id})">×</button>
+        </div>`).join('');
+      return `
+        <div class="card" style="margin-bottom:8px;padding:0;overflow:hidden">
+          <div onclick="toggleDay('${safeKey}')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;user-select:none">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span id="day-arrow-${safeKey}" style="font-size:14px;color:var(--g400);line-height:1">${isToday?'⌄':'›'}</span>
+              <span style="font-size:13px;font-weight:600;color:${isToday?'var(--primary)':'var(--g900)'}">${dayLabel}${isToday?' <span style="font-size:10px;background:var(--primary);color:#fff;padding:1px 6px;border-radius:10px;margin-left:4px">오늘</span>':''}</span>
+            </div>
+            <span style="font-size:12px;color:var(--primary);font-weight:500">${totalMin}분</span>
+          </div>
+          <div id="day-body-${safeKey}" style="display:${isToday?'block':'none'};padding:0 14px 12px;border-top:1px solid var(--g100)">
+            ${items}
+          </div>
+        </div>`;
+    }).join('');
   }
 
-  el.innerHTML=cardsHTML+pageNav;
+  // 주차 네비 버튼
+  const weekNav=`<div style="display:flex;justify-content:center;gap:6px;margin-top:10px">
+    ${weeks.map((wk,i)=>{
+      const hasLog=monthLogs.some(l=>{
+        const d=parseInt(l.date.split('-')[2]);
+        return d>=wk.start&&d<=wk.end;
+      });
+      return `<button onclick="goLogWeek(${i})" style="
+        padding:5px 10px;border-radius:20px;
+        border:1px solid ${i===logWeek?'var(--primary)':'var(--g200)'};
+        background:${i===logWeek?'var(--primary)':'#fff'};
+        color:${i===logWeek?'#fff':hasLog?'var(--g700)':'var(--g400)'};
+        font-family:'Pretendard',sans-serif;font-size:11px;font-weight:500;
+        cursor:pointer;transition:all .15s">
+        ${i+1}주<br><span style="font-size:9px;opacity:.8">${wk.start}~${wk.end}일</span>
+      </button>`;
+    }).join('')}
+  </div>`;
+  el.innerHTML+=weekNav;
 }
 
-function goLogPage(p){
-  logPage=p;
+function goLogWeek(w){
+  logWeek=w;
   renderLogs();
-  document.getElementById('logList').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 // 통계
