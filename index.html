@@ -1260,7 +1260,10 @@ function renderStreak(){
 
 // 노트
 let sentences = JSON.parse(localStorage.getItem('sl2-sents')||'[]');
-const saveSents = () => localStorage.setItem('sl2-sents', JSON.stringify(sentences));
+const saveSents = () => {
+  localStorage.setItem('sl2-sents', JSON.stringify(sentences));
+  if(driveToken) driveSave();
+};
 
 let sentYear = new Date().getFullYear();
 let sentMonth = new Date().getMonth();
