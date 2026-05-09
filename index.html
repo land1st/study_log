@@ -438,6 +438,10 @@ html,body{background:var(--g50);font-family:'Pretendard',-apple-system,sans-seri
     <div class="sheet-sec">
       <div class="sheet-sec-title">데이터 관리</div>
       <div class="data-btns">
+        <button class="data-btn" onclick="shareApp()">
+          <svg class="data-btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <div><div class="data-btn-label">앱 공유하기</div><div class="data-btn-desc">underline. 링크를 친구에게 공유해요</div></div>
+        </button>
         <button class="data-btn" onclick="exportJSON()">
           <svg class="data-btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           <div><div class="data-btn-label">JSON으로 내보내기</div><div class="data-btn-desc">다른 기기에서 불러올 수 있어요</div></div>
@@ -457,9 +461,11 @@ html,body{background:var(--g50);font-family:'Pretendard',-apple-system,sans-seri
   </div>
 </div>
 
-<div style="text-align:center;padding:24px 16px 32px;border-top:1px solid var(--g100);margin-top:8px">
-  <div style="font-size:12px;font-weight:600;color:var(--g400);letter-spacing:.5px;margin-bottom:4px">underline.</div>
-  <div style="font-size:11px;color:var(--g200)">꾸준함이 실력이 된다 · made by <strong style="color:var(--g400)">land1st</strong> · © 2026</div>
+<div style="text-align:center;padding:24px 16px 36px;border-top:1px solid var(--g100);margin-top:8px">
+  <div style="font-size:13px;font-weight:700;color:var(--g700);letter-spacing:.5px;margin-bottom:6px">underline.</div>
+  <div style="font-size:11px;color:var(--g400);margin-bottom:4px">밑줄이 쌓여 나를 만든다</div>
+  <div style="font-size:11px;color:var(--g200);margin-bottom:3px">© 2026 <strong style="color:var(--g400)">land1st</strong> · All rights reserved</div>
+  <div style="font-size:10px;color:var(--g200)">Powered by <strong style="color:var(--g400)">Claude AI</strong></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -818,6 +824,18 @@ function renderCatSelects(){
 function getCat(id){ return categories.find(c=>c.id===id) || {id, name:id, emoji:'📌'}; }
 function closeSettings(){document.getElementById('settingsOverlay').classList.remove('open');}
 function overlayClick(e){if(e.target===document.getElementById('settingsOverlay'))closeSettings();}
+
+function shareApp(){
+  const url = 'https://land1st.github.io/study_log/';
+  const text = 'underline. — 배움을 기록하다\n밑줄이 쌓여 나를 만든다 📖';
+  if(navigator.share){
+    navigator.share({title:'underline.', text, url})
+      .then(()=>toast('공유됐어요!'))
+      .catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(url).then(()=>toast('링크가 복사됐어요!'));
+  }
+}
 
 // JSON 내보내기
 function exportJSON(){
